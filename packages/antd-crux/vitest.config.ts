@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     environment: "happy-dom",
     globals: true,
+    setupFiles: ["./tests/test-setup.ts"],
     typecheck: {
       enabled: true,
     },

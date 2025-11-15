@@ -6,8 +6,9 @@ import { standardValidate } from "./internal/standardSchemaValidator";
 export interface UseFormReturn<TParsedValues = unknown> {
   form: FormInstance<TParsedValues>;
   formProps: FormProps<TParsedValues>;
-  Item: typeof Form.Item<TParsedValues>;
+  FormItem: typeof Form.Item<TParsedValues>;
 }
+
 type ImplOpts = {
   onFinish?: (values: unknown) => Promise<void> | void;
   validator?: StandardSchemaV1;
@@ -47,6 +48,6 @@ export function useForm({
       ...formSF.formProps,
       onFinish,
     },
-    Item: Form.Item,
+    FormItem: Form.Item,
   };
 }
