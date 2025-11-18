@@ -38,19 +38,19 @@ describe("useForm", () => {
     it("renders Form.Items and submits via DOM, calling onFinish with parsed values", async () => {
       const onFinish = vi.fn();
       function Comp() {
-        const { formProps, register } = useForm({
+        const { formProps, FormItem } = useForm({
           validator: schema,
           onFinish,
         });
 
         return (
           <Form {...formProps}>
-            <Form.Item {...register(["name"])}>
+            <FormItem name={["name"]}>
               <Input />
-            </Form.Item>
-            <Form.Item {...register(["age"])}>
+            </FormItem>
+            <FormItem name={["age"]}>
               <InputNumber />
-            </Form.Item>
+            </FormItem>
             <button type="submit">Submit</button>
           </Form>
         );
@@ -81,15 +81,15 @@ describe("useForm", () => {
       );
 
       function Comp() {
-        const { formProps, register } = result.current;
+        const { formProps, FormItem } = result.current;
         return (
           <Form {...formProps}>
-            <Form.Item {...register(["name"])}>
+            <FormItem name={["name"]}>
               <Input />
-            </Form.Item>
-            <Form.Item {...register(["age"])}>
+            </FormItem>
+            <FormItem name={["age"]}>
               <Input />
-            </Form.Item>
+            </FormItem>
             <button type="submit">Submit</button>
           </Form>
         );

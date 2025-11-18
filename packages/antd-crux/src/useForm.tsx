@@ -1,4 +1,5 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
+import type { ReactElement } from "react";
 import { Form, FormInstance, FormItemProps, FormProps } from "antd";
 import { useForm as useFormSF } from "sunflower-antd";
 import { standardValidate } from "./internal/standardSchemaValidator";
@@ -6,10 +7,7 @@ import { standardValidate } from "./internal/standardSchemaValidator";
 export interface UseFormReturn<TParsedValues = unknown> {
   form: FormInstance<TParsedValues>;
   formProps: FormProps<TParsedValues>;
-  register: (
-    name: FormItemProps<TParsedValues>["name"],
-    formProps?: Omit<FormItemProps<TParsedValues>, "name">,
-  ) => FormItemProps<TParsedValues>;
+  FormItem: (props: FormItemProps<TParsedValues>) => ReactElement;
 }
 
 type ImplOpts = {
@@ -61,59 +59,53 @@ export function useForm({
     });
   };
 
-  const register: UseFormReturn["register"] = (
-    name,
-    { rules, ...rest } = {},
-  ) => {
-    // Our antd paths are always arrays of keys, so a path of user.preferences.mailing
-    // becomes ['user', 'preferences', 'mailing'].
+  // eslint-disable-next-line react/prop-types -- enforced via TypeScript generics
+  const FormItem: UseFormReturn["FormItem"] = ({ rules, name, ...rest }) => {
+    if (!validator || !name) {
+      return <Form.Item name={name} rules={rules} {...rest} />;
+    }
+
     const fieldPath = Array.isArray(name) ? name : [name];
+    type RulesType = NonNullable<FormItemProps["rules"]>;
+    const schemaRule: RulesType[number] = ({
+      getFieldsValue,
+    }: {
+      getFieldsValue: typeof _formAnt.getFieldsValue;
+    }) => ({
+      validator: async () => {
+        const allValues = getFieldsValue(true);
+        const result = await standardValidate(validator, allValues);
+        if (result.success) {
+          return Promise.resolve();
+        }
 
-    return {
-      name: name,
-      rules: [
-        ({ getFieldsValue }) => ({
-          validator: async () => {
-            if (!validator) return Promise.resolve(); // no-op if no validator
+        const matchingIssue = result.issues.find((issue) => {
+          if (!issue.path) return false;
+          const issuePath = issue.path.map((segment) =>
+            typeof segment === "object" && "key" in segment
+              ? segment.key
+              : segment,
+          );
+          if (issuePath.length !== fieldPath.length) return false;
+          return issuePath.every((key, index) => key === fieldPath[index]);
+        });
 
-            // Run full validation
-            const allValues = getFieldsValue(true);
-            const result = await standardValidate(validator, allValues);
-            if (result.success) {
-              return Promise.resolve();
-            }
+        if (!matchingIssue) {
+          return Promise.resolve();
+        }
 
-            // Navigate through the issues to see if path matches this field.
-            // Luckily Standard Schema issues have paths in similar format.
-            // We will have a list of Issue objects, each with a path array, so again if our ['user', 'preferences', 'mailing'] failed validation,
-            // we can find an Issue with path ['user', 'preferences', 'mailing'].
-            const matchingIssue = result.issues.find((issue) => {
-              if (!issue.path) return false;
-              const issuePath = issue.path.map((segment) =>
-                typeof segment === "object" && "key" in segment
-                  ? segment.key
-                  : segment,
-              );
-              if (issuePath.length !== fieldPath.length) return false;
-              return issuePath.every((key, index) => key === fieldPath[index]);
-            });
+        return Promise.reject(new Error(matchingIssue.message));
+      },
+    });
 
-            if (!matchingIssue) {
-              return Promise.resolve();
-            }
+    const mergedRules = [schemaRule, ...(rules ?? [])] as RulesType;
 
-            return Promise.reject(new Error(matchingIssue.message));
-          },
-        }),
-        ...(rules || []),
-      ],
-      ...rest,
-    };
+    return <Form.Item name={name} rules={mergedRules} {...rest} />;
   };
 
   return {
     form: _formAnt,
-    register,
+    FormItem,
     formProps: {
       ...formSF.formProps,
       onFinish,
