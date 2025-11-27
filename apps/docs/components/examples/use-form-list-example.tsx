@@ -1,7 +1,8 @@
 "use client";
 
+import { MinusCircleOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useForm } from "@dyrhoi/antd-crux";
-import { Button, Form, Input } from "antd";
+import { Button, Card, Checkbox, Flex, Form, Input, Space } from "antd";
 import z from "zod";
 
 export default function UseFormExample() {
@@ -18,7 +19,11 @@ export default function UseFormExample() {
             }),
           }),
         )
-        .min(1, "At least one email is required"),
+        .min(1, "At least one email is required")
+        // At least one email is must receive security updates
+        .refine((emails) => emails.some((email) => email.updates.security), {
+          message: "At least one email must receive security updates",
+        }),
     }),
     onFinish: (values: unknown) => {
       alert(`${JSON.stringify(values, null, 2)}`);
@@ -30,23 +35,52 @@ export default function UseFormExample() {
       <FormItem name={["username"]} label="Username">
         <Input />
       </FormItem>
-      <FormItem>
-        <FormList name={"emails"}>
+      <FormItem label="Emails" name={"emails"}>
+        <FormList name={"emails"} initialValue={[{}]}>
           {(fields, { add, remove }) => (
             <>
               {fields.map(({ key, getName, name, ...restField }) => {
                 return (
-                  <FormItem
-                    key={key}
-                    label={`Other Email #${key + 1}`}
-                    name={getName(["email"])}
-                    {...restField}
-                  >
-                    <Input />
-                  </FormItem>
+                  <Flex key={key} align="baseline" gap={"middle"}>
+                    <FormItem
+                      style={{ flex: 1 }}
+                      key={key}
+                      name={getName(["email"])}
+                      {...restField}
+                    >
+                      <Input placeholder="john_doe@example.com" />
+                    </FormItem>
+                    <FormItem
+                      name={getName(["updates", "security"])}
+                      initialValue={false}
+                      valuePropName="checked"
+                    >
+                      <Checkbox>Receive Security Updates</Checkbox>
+                    </FormItem>
+                    <FormItem
+                      name={getName(["updates", "newsletter"])}
+                      initialValue={false}
+                      valuePropName="checked"
+                    >
+                      <Checkbox>Receive Newsletter</Checkbox>
+                    </FormItem>
+                    <MinusCircleOutlined
+                      style={{ marginLeft: "auto" }}
+                      onClick={() => remove(name)}
+                    />
+                  </Flex>
                 );
               })}
-              <Button onClick={() => add()}>Add Other Email</Button>
+              <Form.Item>
+                <Button
+                  type="dashed"
+                  block
+                  icon={<PlusCircleOutlined />}
+                  onClick={() => add()}
+                >
+                  Add Email
+                </Button>
+              </Form.Item>
             </>
           )}
         </FormList>

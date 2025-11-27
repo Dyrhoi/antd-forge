@@ -1,4 +1,6 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
+import { SimplePathSegment } from "./path-types";
+import { FormRule } from "antd";
 
 type ValidationResult<T> =
   | { value: T; issues?: undefined; success: true }
@@ -24,4 +26,38 @@ export async function standardValidate<T extends StandardSchemaV1>(
     success: true,
     value: result.value,
   };
+}
+
+export function createSchemaRule<TSchema extends StandardSchemaV1>(
+  validator: TSchema,
+  { fieldPath }: { fieldPath: SimplePathSegment[] },
+): FormRule {
+  return ({ getFieldsValue }) => ({
+    validator: async () => {
+      const allValues = getFieldsValue(true);
+      const result = await standardValidate(validator, allValues);
+      if (result.success) {
+        return Promise.resolve();
+      }
+
+      console.log(result.issues, fieldPath);
+
+      const matchingIssue = result.issues.find((issue) => {
+        if (!issue.path) return false;
+        const issuePath = issue.path.map((segment) =>
+          typeof segment === "object" && "key" in segment
+            ? segment.key
+            : segment,
+        );
+        if (issuePath.length !== fieldPath.length) return false;
+        return issuePath.every((key, index) => key === fieldPath[index]);
+      });
+
+      if (!matchingIssue) {
+        return Promise.resolve();
+      }
+
+      return Promise.reject(new Error(matchingIssue.message));
+    },
+  });
 }
