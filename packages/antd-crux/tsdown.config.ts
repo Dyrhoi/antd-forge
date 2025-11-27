@@ -3,6 +3,7 @@ import pluginBabel from "@rollup/plugin-babel";
 
 export default defineConfig({
   entry: ["./src/index.ts"],
+  clean: false,
   plugins: [
     pluginBabel({
       babelHelpers: "bundled",

@@ -1,18 +1,70 @@
 ---
 title: useForm
-description: A drop-in replacement hook to manage form state and validation.
+description: A drop-in replacement hook to extend Ant Design's useForm with Standard Schema validation while providing type-safe form fields.
 sources:
   Ant Design - Form: https://ant.design/components/form#api
+  Standard Schema: https://standardschema.dev/
 ---
 
 <ExamplePreview src="examples/use-form-example.tsx" />
 
 ## Overview
 
-...
+`useForm` is a drop-in replacement for Ant Design's `Form.useForm()` hook that adds [Standard Schema](https://github.com/standard-schema/standard-schema) validation support. This means you can use any schema library that implements the Standard Schema spec, such as **Zod**, **Valibot**, **ArkType**, and more.
+
+### Key Features
+
+- **Schema-driven validation** - Define your form schema once and get automatic field-level validation
+- **Type inference** - Form values are automatically typed based on your schema's output type
+- **Automatic required field detection** - Fields are marked as required based on schema validation
+- **Typed FormItem & FormList** - Get autocomplete and type checking for field names
+- **Seamless Ant Design integration** - Works with all existing Ant Design Form features
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx twoslash
+import React from "react";
+
+import { Form, Input, Button } from "antd";
+import { z } from "zod"; // Or Valibot, ArkType, etc.
+import { useForm } from "@dyrhoi/antd-crux";
+
+const schema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+});
+
+function MyForm() {
+  const { formProps, FormItem } = useForm({
+    validator: schema,
+    onFinish: (values) => {
+      //       ^?
+      // `values` have been validated and are type-safe
+    },
+  });
+
+  return (
+    <Form {...formProps} layout="vertical">
+      <FormItem name={["username"]} label="Username">
+        //      ^?
+        <Input />
+      </FormItem>
+      <Button type="primary" htmlType="submit">
+        Submit
+      </Button>
+    </Form>
+  );
+}
+```
+
+{/* prettier-ignore-end */}
 
 ## Examples
 
-### Form with Form List
+### Default
+
+<ExamplePreview src="examples/use-form-example.tsx" />
+
+### Form with Dynamic Fields (FormList)
 
 <ExamplePreview src="examples/use-form-list-example.tsx" />

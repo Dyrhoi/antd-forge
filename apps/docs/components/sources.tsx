@@ -1,4 +1,4 @@
-import { AntDesign } from "@/components/icons";
+import { AntDesign, StandardSchema } from "@/components/icons";
 import { Badge, BadgeProps } from "@/components/ui/badge";
 
 const sourceIconMap = [
@@ -6,6 +6,11 @@ const sourceIconMap = [
     name: "Ant Design",
     icon: <AntDesign />,
     match: (url: string) => url.includes("ant.design"),
+  },
+  {
+    name: "Standard Schema",
+    icon: <StandardSchema />,
+    match: (url: string) => url.includes("standardschema.dev"),
   },
 ];
 

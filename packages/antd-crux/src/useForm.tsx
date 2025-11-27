@@ -8,10 +8,6 @@ import { FieldData } from "./internal/antd-types";
 import { standardValidate } from "./internal/standardSchemaValidator";
 import { warning } from "./internal/warning";
 
-// ============================================================================
-// Types
-// ============================================================================
-
 export interface UseFormReturn<TParsedValues = unknown> {
   form: FormInstance<TParsedValues>;
   formProps: FormProps<TParsedValues>;
@@ -24,13 +20,12 @@ type UseFormOptions<TFormValues> = {
   validator?: StandardSchemaV1;
 };
 
-// ============================================================================
-// Overloads
-// ============================================================================
-
 // Overload: schema-driven usage (validator provided)
 export function useForm<TSchema extends StandardSchemaV1>(opts: {
   validator: TSchema;
+  /**
+   * onFinish callback for when form is successfully submitted and validated
+   */
   onFinish?: (
     values: StandardSchemaV1.InferOutput<TSchema>,
   ) => Promise<void> | void;

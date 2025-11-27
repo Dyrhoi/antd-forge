@@ -1,7 +1,7 @@
 {
   "name": "@dyrhoi/antd-crux",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/index.d.mts",
   "scripts": {
     "test": "bun vitest",
     "dev": "tsdown --watch",
@@ -10,7 +10,7 @@
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.mts"
     }
   },
   "devDependencies": {
