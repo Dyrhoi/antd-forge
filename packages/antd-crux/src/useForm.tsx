@@ -8,6 +8,26 @@ import { FieldData } from "./internal/antd-types";
 import { standardValidate } from "./internal/standardSchemaValidator";
 import { warning } from "./internal/warning";
 
+// ============================================================================
+// Type Helpers
+// ============================================================================
+
+/**
+ * Resolves the form values type based on explicit type or schema inference.
+ * - If an explicit type is provided (not `unknown`), use it
+ * - Otherwise, if a schema is provided, infer from the schema
+ * - Fallback to `unknown`
+ */
+export type ResolveFormValues<TSchema, TExplicit> = unknown extends TExplicit
+  ? TSchema extends StandardSchemaV1
+    ? StandardSchemaV1.InferOutput<TSchema>
+    : unknown
+  : TExplicit;
+
+// ============================================================================
+// Public Types
+// ============================================================================
+
 export interface UseFormReturn<TParsedValues = unknown> {
   /**
    * Ant Design form instance with typed values.
@@ -44,15 +64,18 @@ export interface UseFormReturn<TParsedValues = unknown> {
   FormList: TypedFormListComponent<TParsedValues>;
 }
 
-type UseFormOptions<TFormValues> = {
+export interface UseFormOptions<
+  TSchema extends StandardSchemaV1 | undefined,
+  TFormValues,
+> {
   /**
    * Callback invoked when the form is successfully submitted.
    * If a `validator` is provided, this is called only after validation passes,
    * and receives the parsed/transformed output values from the schema.
    *
-   * @param values - The validated form values.
+   * @param values - The validated form values (inferred from schema or explicit type).
    */
-  onFinish?: (values: TFormValues) => Promise<void> | void;
+  onFinish?: (values: NoInfer<TFormValues>) => Promise<void> | void;
 
   /**
    * A Standard Schema validator (e.g., Zod, Valibot, ArkType) for form validation.
@@ -65,44 +88,24 @@ type UseFormOptions<TFormValues> = {
    *
    * @see https://github.com/standard-schema/standard-schema
    */
-  validator?: StandardSchemaV1;
-};
-
-// Overload: schema-driven usage (validator provided)
-export function useForm<TSchema extends StandardSchemaV1>(opts: {
-  /**
-   * A Standard Schema validator (e.g., Zod, Valibot, ArkType) for form validation.
-   * The form's value type is automatically inferred from the schema's output type.
-   */
-  validator: TSchema;
-  /**
-   * Callback invoked when the form is successfully submitted and validated.
-   * Receives the parsed/transformed output values from the schema.
-   */
-  onFinish?: (
-    values: StandardSchemaV1.InferOutput<TSchema>,
-  ) => Promise<void> | void;
-}): UseFormReturn<StandardSchemaV1.InferOutput<TSchema>>;
-
-// Overload: generic or no-validator usage
-export function useForm<TFormValues = unknown>(opts?: {
-  /**
-   * Callback invoked when the form is successfully submitted.
-   * Receives the raw form values (type must be provided explicitly via generic).
-   */
-  onFinish?: (values: TFormValues) => Promise<void> | void;
-  validator?: undefined;
-}): UseFormReturn<TFormValues>;
+  validator?: TSchema;
+}
 
 // ============================================================================
 // Implementation
 // ============================================================================
 
-export function useForm<TFormValues = unknown>({
-  onFinish: onFinishFromProps,
-  validator,
-}: UseFormOptions<TFormValues> = {}): UseFormReturn<TFormValues> {
-  const [formAnt] = Form.useForm<TFormValues>();
+export function useForm<
+  TFormValues = unknown,
+  TSchema extends StandardSchemaV1 | undefined = undefined,
+>(
+  opts?: UseFormOptions<TSchema, ResolveFormValues<TSchema, TFormValues>>,
+): UseFormReturn<ResolveFormValues<TSchema, TFormValues>> {
+  type TResolvedValues = ResolveFormValues<TSchema, TFormValues>;
+
+  const { onFinish: onFinishFromProps, validator } = opts ?? {};
+
+  const [formAnt] = Form.useForm<TResolvedValues>();
   const formSF = useFormSF({ form: formAnt });
 
   const [requiredFields] = useState<
@@ -126,26 +129,26 @@ export function useForm<TFormValues = unknown>({
     }
   });
 
-  const onFinish = async (values: TFormValues) => {
+  const onFinish = async (values: TResolvedValues) => {
     if (!onFinishFromProps) return;
     if (!validator) {
       return onFinishFromProps(values);
     }
     return standardValidate(validator, values).then((result) => {
       if (result.success) {
-        return onFinishFromProps(result.value as TFormValues);
+        return onFinishFromProps(result.value as TResolvedValues);
       }
       const formErrors = mapIssuesToFormErrors(result.issues);
       formSF.form.setFields(formErrors);
     });
   };
 
-  const FormItem = createFormItem<TFormValues>({
+  const FormItem = createFormItem<TResolvedValues>({
     validator,
     requiredFields,
   });
 
-  const FormList = createFormList<TFormValues>({
+  const FormList = createFormList<TResolvedValues>({
     validator,
   });
 
