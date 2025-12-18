@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { AntdCruxProvider } from "@dyrhoi/antd-crux";
+import { AntdForgeProvider } from "@dyrhoi/antd-forge";
 
 const queryClient = new QueryClient();
 
@@ -28,7 +28,7 @@ export function ComponentPreviewWrapper({
   return (
     <QueryClientProvider client={queryClient}>
       <App>
-        <AntdCruxProvider queryClient={queryClient}>
+        <AntdForgeProvider queryClient={queryClient}>
           <ConfigProvider
             theme={{
               algorithm: [
@@ -38,7 +38,7 @@ export function ComponentPreviewWrapper({
           >
             {children}
           </ConfigProvider>
-        </AntdCruxProvider>
+        </AntdForgeProvider>
       </App>
     </QueryClientProvider>
   );

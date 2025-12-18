@@ -2,12 +2,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createContext, useContext, useMemo } from "react";
 
-interface AntdCruxContextValue {
+interface AntdForgeContextValue {
   queryClient: QueryClient;
   isUsingExternalQueryClient: boolean;
 }
 
-const AntdCruxContext = createContext<AntdCruxContextValue | null>(null);
+const AntdForgeContext = createContext<AntdForgeContextValue | null>(null);
 
 // Internal default client (lazy-created)
 let internalQueryClient: QueryClient | null = null;
@@ -18,16 +18,16 @@ function getInternalQueryClient() {
   return internalQueryClient;
 }
 
-interface AntdCruxProviderProps {
+interface AntdForgeProviderProps {
   children: React.ReactNode;
   queryClient?: QueryClient; // Optional - user's client
 }
 
-export function AntdCruxProvider({
+export function AntdForgeProvider({
   children,
   queryClient,
-}: AntdCruxProviderProps) {
-  const value = useMemo<AntdCruxContextValue>(
+}: AntdForgeProviderProps) {
+  const value = useMemo<AntdForgeContextValue>(
     () => ({
       queryClient: queryClient ?? getInternalQueryClient(),
       isUsingExternalQueryClient: !!queryClient,
@@ -36,7 +36,7 @@ export function AntdCruxProvider({
   );
 
   return (
-    <AntdCruxContext.Provider value={value}>
+    <AntdForgeContext.Provider value={value}>
       {/* Only wrap with QCP if using internal client */}
       {value.isUsingExternalQueryClient ? (
         children
@@ -45,12 +45,12 @@ export function AntdCruxProvider({
           {children}
         </QueryClientProvider>
       )}
-    </AntdCruxContext.Provider>
+    </AntdForgeContext.Provider>
   );
 }
 
-export function useAntdCrux() {
-  const ctx = useContext(AntdCruxContext);
+export function useAntdForge() {
+  const ctx = useContext(AntdForgeContext);
   if (!ctx) {
     return {
       queryClient: getInternalQueryClient(),

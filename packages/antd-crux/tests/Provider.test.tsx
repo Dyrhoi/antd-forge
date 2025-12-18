@@ -6,7 +6,7 @@ import {
 import { render, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
-import { AntdCruxProvider, useAntdCrux } from "../src/Provider";
+import { AntdForgeProvider, useAntdForge } from "../src/Provider";
 
 interface CapturedContext {
   queryClient: QueryClient;
@@ -21,7 +21,7 @@ const ContextInspector = ({
 }: {
   onCapture: (data: CapturedContext) => void;
 }) => {
-  const { queryClient, isUsingExternalQueryClient } = useAntdCrux();
+  const { queryClient, isUsingExternalQueryClient } = useAntdForge();
 
   // Try to grab the client from React Query's context to verify wrapping
   let reactQueryClient: QueryClient | null = null;
@@ -44,15 +44,15 @@ const ContextInspector = ({
   return null;
 };
 
-describe("AntdCruxProvider", () => {
+describe("AntdForgeProvider", () => {
   it("should use the provided QueryClient in the context", () => {
     const externalClient = new QueryClient();
     let captured: CapturedContext;
 
     render(
-      <AntdCruxProvider queryClient={externalClient}>
+      <AntdForgeProvider queryClient={externalClient}>
         <ContextInspector onCapture={(data) => (captured = data)} />
-      </AntdCruxProvider>,
+      </AntdForgeProvider>,
     );
 
     expect(captured!.isUsingExternalQueryClient).toBe(true);
@@ -63,9 +63,9 @@ describe("AntdCruxProvider", () => {
     let captured: CapturedContext;
 
     render(
-      <AntdCruxProvider>
+      <AntdForgeProvider>
         <ContextInspector onCapture={(data) => (captured = data)} />
-      </AntdCruxProvider>,
+      </AntdForgeProvider>,
     );
 
     expect(captured!.isUsingExternalQueryClient).toBe(false);
@@ -73,8 +73,8 @@ describe("AntdCruxProvider", () => {
   });
 
   it("should maintain the same internal QueryClient instance across re-renders (singleton behavior)", () => {
-    const { result, rerender } = renderHook(() => useAntdCrux(), {
-      wrapper: AntdCruxProvider,
+    const { result, rerender } = renderHook(() => useAntdForge(), {
+      wrapper: AntdForgeProvider,
     });
 
     const firstClient = result.current.queryClient;
@@ -88,14 +88,14 @@ describe("AntdCruxProvider", () => {
     let captured: CapturedContext;
 
     render(
-      <AntdCruxProvider>
+      <AntdForgeProvider>
         <ContextInspector onCapture={(data) => (captured = data)} />
-      </AntdCruxProvider>,
+      </AntdForgeProvider>,
     );
 
-    // useQueryClient() should work because AntdCruxProvider wraps with QueryClientProvider
+    // useQueryClient() should work because AntdForgeProvider wraps with QueryClientProvider
     expect(captured!.hasQueryClientProvider).toBe(true);
-    // And the client from useQueryClient should be the same as the one from useAntdCrux
+    // And the client from useQueryClient should be the same as the one from useAntdForge
     expect(captured!.reactQueryClient).toBe(captured!.queryClient);
   });
 
@@ -104,11 +104,11 @@ describe("AntdCruxProvider", () => {
     let captured: CapturedContext;
 
     // When an external client is passed, the user is expected to provide the QueryClientProvider
-    // higher up the tree. AntdCruxProvider should NOT add its own QueryClientProvider.
+    // higher up the tree. AntdForgeProvider should NOT add its own QueryClientProvider.
     render(
-      <AntdCruxProvider queryClient={externalClient}>
+      <AntdForgeProvider queryClient={externalClient}>
         <ContextInspector onCapture={(data) => (captured = data)} />
-      </AntdCruxProvider>,
+      </AntdForgeProvider>,
     );
 
     // Since we didn't wrap the test in a QueryClientProvider, useQueryClient() should throw
@@ -122,9 +122,9 @@ describe("AntdCruxProvider", () => {
     // This simulates the expected usage pattern: user provides their own QueryClientProvider
     const wrapper = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={externalClient}>
-        <AntdCruxProvider queryClient={externalClient}>
+        <AntdForgeProvider queryClient={externalClient}>
           {children}
-        </AntdCruxProvider>
+        </AntdForgeProvider>
       </QueryClientProvider>
     );
 
@@ -137,8 +137,8 @@ describe("AntdCruxProvider", () => {
     expect(captured!.reactQueryClient).toBe(captured!.queryClient);
   });
 
-  it("useAntdCrux should return default internal client if used outside provider", () => {
-    const { result } = renderHook(() => useAntdCrux());
+  it("useAntdForge should return default internal client if used outside provider", () => {
+    const { result } = renderHook(() => useAntdForge());
 
     expect(result.current.queryClient).toBeInstanceOf(QueryClient);
     expect(result.current.isUsingExternalQueryClient).toBe(false);

@@ -1,5 +1,5 @@
 {
-  "name": "@dyrhoi/antd-crux",
+  "name": "@dyrhoi/antd-forge",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
   "scripts": {

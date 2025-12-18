@@ -1,5 +1,5 @@
 {
-  "name": "antd-crux",
+  "name": "antd-forge",
   "private": true,
   "scripts": {
     "build": "turbo run build",

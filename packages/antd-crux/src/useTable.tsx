@@ -192,7 +192,7 @@ export function useTable<
   type TResolvedValues = ResolveFormValues<TSchema, TFormValues>;
   const formResult = useForm(opts) as UseFormReturn<TResolvedValues>;
   const simpleQueryKey = useMemo(() => {
-    return ["antd-crux-table", Math.random().toString(36).substring(2, 15)];
+    return ["antd-forge-table", Math.random().toString(36).substring(2, 15)];
   }, []);
 
   const [filters, setFilters] = useState<TResolvedValues>(
