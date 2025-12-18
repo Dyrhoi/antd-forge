@@ -19,8 +19,14 @@ import { useMemo, useState } from "react";
 // Search Types
 // ============================================================================
 
+export interface PaginationProps {
+  current: number;
+  pageSize: number;
+}
+
 export interface SearchProps<TFormValues = unknown> {
   filters: TFormValues;
+  pagination: PaginationProps;
 }
 
 export interface SearchResult<TData = unknown> {
@@ -91,6 +97,7 @@ export interface UseTableReturn<
   tableProps: TableProps<TData>;
   query: UseQueryResult<SearchResult<TData>, TError>;
   filters: TFormValues;
+  pagination: PaginationProps & { total: number | undefined };
 }
 
 // ============================================================================
@@ -107,6 +114,17 @@ export interface UseTableSearchOptions<TFormValues, TData> {
   ) => SearchResult<TData> | Promise<SearchResult<TData>>;
   queryKey?: QueryKey;
   queryOptions?: undefined;
+  /**
+   * Pagination configuration.
+   */
+  pagination?: {
+    initial?: {
+      /** Initial page size. @default 10 */
+      pageSize?: number;
+      /** Initial page number. @default 1 */
+      current?: number;
+    };
+  };
 }
 
 export interface UseTableQueryOptions<
@@ -124,6 +142,17 @@ export interface UseTableQueryOptions<
    */
   queryOptions: TableQueryOptionsFn<TFormValues, TData, TError>;
   search?: undefined;
+  /**
+   * Pagination configuration.
+   */
+  pagination?: {
+    initial?: {
+      /** Initial page size. @default 10 */
+      pageSize?: number;
+      /** Initial page number. @default 1 */
+      current?: number;
+    };
+  };
 }
 
 // ============================================================================
@@ -139,15 +168,18 @@ export type UseTableOptions<
   (
     | UseTableSearchOptions<ResolveFormValues<TSchema, TFormValues>, TData>
     | UseTableQueryOptions<
-        ResolveFormValues<TSchema, TFormValues>,
-        TData,
-        TError
-      >
+      ResolveFormValues<TSchema, TFormValues>,
+      TData,
+      TError
+    >
   );
 
 // ============================================================================
 // Implementation
 // ============================================================================
+
+const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_CURRENT_PAGE = 1;
 
 export function useTable<
   TFormValues = unknown,
@@ -167,22 +199,38 @@ export function useTable<
     formResult.formProps.initialValues as TResolvedValues,
   );
 
+  const [paginationState, setPaginationState] = useState<PaginationProps>({
+    current: opts.pagination?.initial?.current ?? DEFAULT_CURRENT_PAGE,
+    pageSize: opts.pagination?.initial?.pageSize ?? DEFAULT_PAGE_SIZE,
+  });
+
   const searchProps: SearchProps<TResolvedValues> = {
     filters: filters,
+    pagination: paginationState,
   };
 
   const tableQueryOptions = opts.queryOptions
     ? opts.queryOptions(searchProps)
     : {
-        queryKey: [...(opts.queryKey ?? [simpleQueryKey]), searchProps],
-        queryFn: () => opts.search!(searchProps),
-        placeholderData: keepPreviousData,
-      };
+      queryKey: [...(opts.queryKey ?? [simpleQueryKey]), searchProps],
+      queryFn: () => opts.search!(searchProps),
+      placeholderData: keepPreviousData,
+    };
 
   const query = useQuery(tableQueryOptions);
 
+  const handlePaginationChange = (page: number, pageSize: number) => {
+    setPaginationState((prev) => {
+      // Reset to page 1 if pageSize changed
+      const newPage = pageSize !== prev.pageSize ? 1 : page;
+      return { current: newPage, pageSize };
+    });
+  };
+
   const onFinish = async (values: TResolvedValues) => {
     setFilters(values);
+    // Reset to page 1 when filters change
+    setPaginationState((prev) => ({ ...prev, current: 1 }));
     return await opts.onFinish?.(values);
   };
 
@@ -195,8 +243,18 @@ export function useTable<
     tableProps: {
       dataSource: query.data?.data,
       loading: !query.isFetched,
+      pagination: {
+        current: paginationState.current,
+        pageSize: paginationState.pageSize,
+        total: query.data?.total,
+        onChange: handlePaginationChange,
+      },
     },
     query,
     filters,
+    pagination: {
+      ...paginationState,
+      total: query.data?.total,
+    },
   };
 }

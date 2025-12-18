@@ -3,30 +3,7 @@
 import { useTable } from "@dyrhoi/antd-crux";
 import { Button, Form, Input, Select, Table, Tag } from "antd";
 import z from "zod";
-
-// Mock data
-const mockUsers = [
-  {
-    id: 1,
-    name: "Alice Johnson",
-    email: "alice@example.com",
-    status: "active",
-  },
-  { id: 2, name: "Bob Smith", email: "bob@example.com", status: "inactive" },
-  {
-    id: 3,
-    name: "Charlie Brown",
-    email: "charlie@example.com",
-    status: "active",
-  },
-  { id: 4, name: "Diana Prince", email: "diana@example.com", status: "active" },
-  {
-    id: 5,
-    name: "Edward Norton",
-    email: "edward@example.com",
-    status: "inactive",
-  },
-];
+import { mockUsers, type User } from "./mockdata/users";
 
 const schema = z.object({
   search: z.string().optional(),
@@ -34,13 +11,13 @@ const schema = z.object({
 });
 
 type Filters = z.infer<typeof schema>;
-type User = (typeof mockUsers)[number];
+type Pagination = { current: number; pageSize: number };
 
-// Simulated API fetch
-async function fetchUsers(filters: Filters) {
+// Simulated API fetch with server-side pagination
+async function fetchUsers(filters: Filters, pagination: Pagination) {
   await new Promise((resolve) => setTimeout(resolve, 500));
 
-  let filtered = mockUsers;
+  let filtered = [...mockUsers];
 
   if (filters.search) {
     const search = filters.search.toLowerCase();
@@ -55,8 +32,12 @@ async function fetchUsers(filters: Filters) {
     filtered = filtered.filter((user) => user.status === filters.status);
   }
 
+  // Server-side pagination
+  const start = (pagination.current - 1) * pagination.pageSize;
+  const paged = filtered.slice(start, start + pagination.pageSize);
+
   return {
-    items: filtered,
+    items: paged,
     totalCount: filtered.length,
   };
 }
@@ -64,10 +45,11 @@ async function fetchUsers(filters: Filters) {
 export default function UseTableExample() {
   const { formProps, FormItem, tableProps, form } = useTable({
     validator: schema,
-    search: async ({ filters }) => {
-      const data = await fetchUsers(filters);
+    search: async ({ filters, pagination }) => {
+      const data = await fetchUsers(filters, pagination);
       return { data: data.items, total: data.totalCount };
     },
+    pagination: { initial: { pageSize: 5 } },
   });
 
   return (

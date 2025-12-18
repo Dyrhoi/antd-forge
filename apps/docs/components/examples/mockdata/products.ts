@@ -1,0 +1,26 @@
+export const mockProducts = [
+    { id: 1, name: "Laptop Pro", category: "electronics", price: 1299, stock: 15 },
+    { id: 2, name: "Wireless Mouse", category: "electronics", price: 49, stock: 150 },
+    { id: 3, name: "Office Chair", category: "furniture", price: 299, stock: 30 },
+    { id: 4, name: "Standing Desk", category: "furniture", price: 599, stock: 12 },
+    { id: 5, name: 'Monitor 27"', category: "electronics", price: 399, stock: 45 },
+    { id: 6, name: "Mechanical Keyboard", category: "electronics", price: 129, stock: 80 },
+    { id: 7, name: "Desk Lamp", category: "furniture", price: 79, stock: 60 },
+    { id: 8, name: "USB-C Hub", category: "electronics", price: 59, stock: 200 },
+    { id: 9, name: "Webcam HD", category: "electronics", price: 89, stock: 75 },
+    { id: 10, name: "Bookshelf", category: "furniture", price: 149, stock: 25 },
+    { id: 11, name: "Headphones", category: "electronics", price: 199, stock: 90 },
+    { id: 12, name: "Filing Cabinet", category: "furniture", price: 179, stock: 18 },
+    { id: 13, name: "External SSD", category: "electronics", price: 119, stock: 120 },
+    { id: 14, name: "Ergonomic Mouse", category: "electronics", price: 79, stock: 65 },
+    { id: 15, name: "Monitor Stand", category: "furniture", price: 49, stock: 40 },
+    { id: 16, name: "Wireless Charger", category: "electronics", price: 35, stock: 180 },
+    { id: 17, name: "Desk Organizer", category: "furniture", price: 29, stock: 95 },
+    { id: 18, name: "Tablet Stand", category: "electronics", price: 25, stock: 110 },
+    { id: 19, name: "Cable Management Kit", category: "electronics", price: 19, stock: 200 },
+    { id: 20, name: "Footrest", category: "furniture", price: 45, stock: 35 },
+    { id: 21, name: "Whiteboard", category: "furniture", price: 89, stock: 22 },
+    { id: 22, name: "Desk Mat", category: "furniture", price: 35, stock: 150 },
+] as const;
+
+export type Product = (typeof mockProducts)[number];

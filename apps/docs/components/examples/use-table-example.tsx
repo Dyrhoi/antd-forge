@@ -1,68 +1,34 @@
 "use client";
 
 import { useTable, createTableQueryOptions } from "@dyrhoi/antd-crux";
-import { Button, Form, Input, Select, Table, Tag, Space } from "antd";
+import { Button, Form, Input, Select, Table, Tag } from "antd";
 import { queryOptions } from "@tanstack/react-query";
 import z from "zod";
-
-// Mock data with more fields
-const mockProducts = [
-  {
-    id: 1,
-    name: "Laptop Pro",
-    category: "electronics",
-    price: 1299,
-    stock: 15,
-  },
-  {
-    id: 2,
-    name: "Wireless Mouse",
-    category: "electronics",
-    price: 49,
-    stock: 150,
-  },
-  { id: 3, name: "Office Chair", category: "furniture", price: 299, stock: 30 },
-  {
-    id: 4,
-    name: "Standing Desk",
-    category: "furniture",
-    price: 599,
-    stock: 12,
-  },
-  {
-    id: 5,
-    name: 'Monitor 27"',
-    category: "electronics",
-    price: 399,
-    stock: 45,
-  },
-  { id: 6, name: "Keyboard", category: "electronics", price: 129, stock: 80 },
-  { id: 7, name: "Desk Lamp", category: "furniture", price: 79, stock: 60 },
-];
+import { mockProducts, type Product } from "./mockdata/products";
 
 const schema = z.object({
   search: z.string().optional(),
-  category: z.enum(["electronics", "furniture"]).optional(),
+  category: z.array(z.enum(["electronics", "furniture"])).optional(),
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
 });
 
 type Filters = z.infer<typeof schema>;
-type Product = (typeof mockProducts)[number];
+type Pagination = { current: number; pageSize: number };
 
-// Simulated API fetch
-async function fetchProducts(filters: Filters) {
+// Simulated API fetch with server-side pagination
+async function fetchProducts(filters: Filters, pagination: Pagination) {
   await new Promise((resolve) => setTimeout(resolve, 300));
 
-  let filtered = mockProducts;
+  let filtered = [...mockProducts];
 
   if (filters.search) {
     const search = filters.search.toLowerCase();
     filtered = filtered.filter((p) => p.name.toLowerCase().includes(search));
   }
 
-  if (filters.category) {
-    filtered = filtered.filter((p) => p.category === filters.category);
+  if (filters.category && filters.category.length > 0) {
+    filtered = filtered.filter((p) => filters.category!.includes(p.category));
   }
 
   if (filters.minPrice !== undefined) {
@@ -73,18 +39,22 @@ async function fetchProducts(filters: Filters) {
     filtered = filtered.filter((p) => p.price <= filters.maxPrice!);
   }
 
+  // Server-side pagination
+  const start = (pagination.current - 1) * pagination.pageSize;
+  const paged = filtered.slice(start, start + pagination.pageSize);
+
   return {
-    items: filtered,
+    items: paged,
     totalCount: filtered.length,
   };
 }
 
 // Colocated query options - can be defined in a separate file
 const productsQueryOptions = createTableQueryOptions<Filters, Product>()(
-  ({ filters }) =>
+  ({ filters, pagination }) =>
     queryOptions({
-      queryKey: ["products", filters],
-      queryFn: () => fetchProducts(filters),
+      queryKey: ["products", filters, pagination],
+      queryFn: () => fetchProducts(filters, pagination),
       select: (data) => ({
         data: data.items,
         total: data.totalCount,
@@ -97,6 +67,7 @@ export default function UseTableQueryOptionsExample() {
   const { formProps, FormItem, tableProps, query } = useTable({
     validator: schema,
     queryOptions: productsQueryOptions,
+    pagination: { initial: { pageSize: 5 } }, // Show pagination with 5 items per page
   });
 
   return (
@@ -106,7 +77,7 @@ export default function UseTableQueryOptionsExample() {
           <Input placeholder="Search products..." style={{ width: 160 }} />
         </FormItem>
         <FormItem name="category">
-          <Select placeholder="Category" allowClear style={{ width: 130 }}>
+          <Select placeholder="Category" mode="multiple" allowClear style={{ width: 130 }}>
             <Select.Option value="electronics">Electronics</Select.Option>
             <Select.Option value="furniture">Furniture</Select.Option>
           </Select>

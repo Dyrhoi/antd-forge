@@ -61,7 +61,8 @@ describe("useTable", () => {
       });
 
       expect(searchFn).toHaveBeenCalledWith({
-        filters: {}, // Initial filters are empty object from form.getFieldsValue()
+        filters: {},
+        pagination: { current: 1, pageSize: 10 },
       });
     });
 
@@ -97,6 +98,7 @@ describe("useTable", () => {
       // Search should be called again with new filters
       expect(searchFn).toHaveBeenLastCalledWith({
         filters: newFilters,
+        pagination: { current: 1, pageSize: 10 },
       });
     });
 
@@ -220,7 +222,8 @@ describe("useTable", () => {
       });
 
       expect(queryOptionsFn).toHaveBeenCalledWith({
-        filters: {}, // Initial filters are empty object
+        filters: {},
+        pagination: { current: 1, pageSize: 10 },
       });
     });
 
@@ -280,6 +283,147 @@ describe("useTable", () => {
       });
 
       expect(result.current.filters).toEqual(newFilters);
+    });
+  });
+
+  describe("pagination", () => {
+    it("should use default pagination values (current: 1, pageSize: 10)", async () => {
+      const searchFn = vi.fn().mockResolvedValue({ data: [], total: 100 });
+
+      const { result } = renderHook(
+        () => useTable({ validator: schema, search: searchFn }),
+        { wrapper: createWrapper() },
+      );
+
+      await waitFor(() => expect(result.current.query.isSuccess).toBe(true));
+
+      expect(result.current.pagination).toEqual({
+        current: 1,
+        pageSize: 10,
+        total: 100,
+      });
+    });
+
+    it("should use custom initial pagination values", async () => {
+      const searchFn = vi.fn().mockResolvedValue({ data: [], total: 100 });
+
+      const { result } = renderHook(
+        () =>
+          useTable({
+            validator: schema,
+            search: searchFn,
+            pagination: { initial: { current: 2, pageSize: 25 } },
+          }),
+        { wrapper: createWrapper() },
+      );
+
+      await waitFor(() => expect(result.current.query.isSuccess).toBe(true));
+
+      expect(searchFn).toHaveBeenCalledWith({
+        filters: {},
+        pagination: { current: 2, pageSize: 25 },
+      });
+      expect(result.current.pagination.current).toBe(2);
+      expect(result.current.pagination.pageSize).toBe(25);
+    });
+
+    it("should update pagination when tableProps.pagination.onChange is called", async () => {
+      const searchFn = vi.fn().mockResolvedValue({ data: [], total: 100 });
+
+      const { result } = renderHook(
+        () => useTable({ validator: schema, search: searchFn }),
+        { wrapper: createWrapper() },
+      );
+
+      await waitFor(() => expect(result.current.query.isSuccess).toBe(true));
+
+      // Simulate page change via table
+      act(() => {
+        result.current.tableProps.pagination &&
+          typeof result.current.tableProps.pagination === "object" &&
+          result.current.tableProps.pagination.onChange?.(3, 10);
+      });
+
+      await waitFor(() => expect(result.current.pagination.current).toBe(3));
+
+      expect(searchFn).toHaveBeenLastCalledWith({
+        filters: {},
+        pagination: { current: 3, pageSize: 10 },
+      });
+    });
+
+    it("should reset to page 1 when pageSize changes", async () => {
+      const searchFn = vi.fn().mockResolvedValue({ data: [], total: 100 });
+
+      const { result } = renderHook(
+        () =>
+          useTable({
+            validator: schema,
+            search: searchFn,
+            pagination: { initial: { current: 5, pageSize: 10 } },
+          }),
+        { wrapper: createWrapper() },
+      );
+
+      await waitFor(() => expect(result.current.query.isSuccess).toBe(true));
+      expect(result.current.pagination.current).toBe(5);
+
+      // Change pageSize
+      act(() => {
+        result.current.tableProps.pagination &&
+          typeof result.current.tableProps.pagination === "object" &&
+          result.current.tableProps.pagination.onChange?.(5, 20);
+      });
+
+      await waitFor(() => expect(result.current.pagination.pageSize).toBe(20));
+      expect(result.current.pagination.current).toBe(1);
+    });
+
+    it("should reset to page 1 when filters change", async () => {
+      const searchFn = vi.fn().mockResolvedValue({ data: [], total: 100 });
+
+      const { result } = renderHook(
+        () => useTable({ validator: schema, search: searchFn }),
+        { wrapper: createWrapper() },
+      );
+
+      await waitFor(() => expect(result.current.query.isSuccess).toBe(true));
+
+      // Navigate to page 3
+      act(() => {
+        result.current.tableProps.pagination &&
+          typeof result.current.tableProps.pagination === "object" &&
+          result.current.tableProps.pagination.onChange?.(3, 10);
+      });
+
+      await waitFor(() => expect(result.current.pagination.current).toBe(3));
+
+      // Submit form with new filters
+      act(() => {
+        result.current.formProps.onFinish?.({ filter: "new" });
+      });
+
+      expect(result.current.pagination.current).toBe(1);
+    });
+
+    it("should expose total from query result", async () => {
+      const { result } = renderHook(
+        () =>
+          useTable({
+            validator: schema,
+            search: async () => ({ data: [], total: 42 }),
+          }),
+        { wrapper: createWrapper() },
+      );
+
+      await waitFor(() => expect(result.current.query.isSuccess).toBe(true));
+
+      expect(result.current.pagination.total).toBe(42);
+      expect(
+        result.current.tableProps.pagination &&
+        typeof result.current.tableProps.pagination === "object" &&
+        result.current.tableProps.pagination.total,
+      ).toBe(42);
     });
   });
 });

@@ -6,7 +6,7 @@ sources:
   TanStack Query: https://tanstack.com/query/latest
 ---
 
-<ExamplePreview src="examples/use-table-example.tsx" />
+<ExamplePreview src="examples/use-table-example.tsx" files={[{ path: "examples/mockdata/products.ts", name: "products.ts" }]} />
 
 ## Overview
 
@@ -17,6 +17,7 @@ sources:
 - **Built on useForm** - All type-safe form features from `useForm` are included
 - **Automatic query management** - Filters are synced with TanStack Query
 - **Type-safe data fetching** - Full type inference for filter values and query results
+- **Built-in pagination** - Server-side pagination with automatic state management
 - **Colocated query definitions** - Define query options separately with `createTableQueryOptions`
 
 ## Usage
@@ -43,7 +44,7 @@ const schema = z.object({
 function UsersTable() {
   const { formProps, FormItem, tableProps } = useTable({
     validator: schema,
-    queryOptions: ({ filters }) =>
+    queryOptions: ({ filters, pagination }) =>
       //             ^?
       queryOptions({
         queryKey: ["users", filters],
@@ -93,8 +94,8 @@ If you're not using TanStack Query, you can use the simpler `search` function in
 ```tsx
 const { formProps, FormItem, tableProps } = useTable({
   validator: schema,
-  search: async ({ filters }) => {
-    const data = await fetchUsers(filters);
+  search: async ({ filters, pagination }) => {
+    const data = await fetchUsers(filters, pagination.current, pagination.pageSize);
     return { data: data.items, total: data.count };
   },
 });
@@ -104,8 +105,55 @@ const { formProps, FormItem, tableProps } = useTable({
 
 ### Default `queryOptions`
 
-<ExamplePreview src="examples/use-table-example.tsx" />
+<ExamplePreview src="examples/use-table-example.tsx" files={[{ path: "examples/mockdata/products.ts", name: "products.ts" }]} />
 
 ### Basic without TanStack Query using `search`
 
-<ExamplePreview src="examples/use-table-basic-example.tsx" />
+<ExamplePreview src="examples/use-table-basic-example.tsx" files={[{ path: "examples/mockdata/users.ts", name: "users.ts" }]} />
+
+## Pagination
+
+`useTable` provides built-in server-side pagination. The `search` or `queryOptions` function receives pagination state, and `tableProps` automatically wires up the table's pagination UI.
+
+### How It Works
+
+1. Your search function receives `{ filters, pagination: { current, pageSize } }`
+2. Return `{ data, total }` where `total` is the total count (not page count)
+3. `tableProps.pagination` is automatically configured with the current state
+4. Page resets to 1 when filters change or page size changes
+
+### Custom Initial Values
+
+```tsx
+const { tableProps, pagination } = useTable({
+  validator: schema,
+  search: searchFn,
+  pagination: {
+    initial: {
+      pageSize: 25,  // Default is 10
+      current: 1,
+    },
+  },
+});
+
+// Read current pagination state
+console.log(pagination.current, pagination.pageSize, pagination.total);
+```
+
+### Using Pagination in Queries
+
+```tsx
+const { tableProps } = useTable({
+  validator: schema,
+  queryOptions: ({ filters, pagination }) =>
+    queryOptions({
+      queryKey: ["users", filters, pagination],
+      queryFn: () => fetchUsers({
+        ...filters,
+        page: pagination.current,
+        limit: pagination.pageSize,
+      }),
+      select: (data) => ({ data: data.items, total: data.totalCount }),
+    }),
+});
+```
