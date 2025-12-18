@@ -1,3 +1,9 @@
 {
-  "pages": ["---Introduction---", "index", "test", "---Hooks---", "...hooks"]
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "installation",
+    "---Hooks---",
+    "...hooks"
+  ]
 }

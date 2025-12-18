@@ -1,13 +1,49 @@
 ---
-title: Hello World
-description: Your first document
+title: Introduction
+description: Type-safe components and hooks for Ant Design with schema validation and query integration.
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+# antd-forge
 
-## What is Next?
+An opinionated collection of components and hooks for [Ant Design](https://ant.design/) that I find myself recreating across projects. This is my take on better **TypeScript support**, **schema validation**, and **common patterns** for building data-driven applications.
+
+<Callout title="Early Development" type="warn">
+antd-forge is still in early development and does not have a stable release yet. The API may change.
+</Callout>
+
+## Why?
+
+In my experience, Ant Design, although being a generally well made library, has some shortcomings with typings and you typically have to reach for the same boilerplate across applications to build common SaaS features.
+
+[refine.dev](https://refine.dev/) solves this in their own ways but locks you into their data flow and framework.
+
+**antd-forge** takes a different approach: no framework or library lock-ins. You can enhance your experience using industry standard libraries like TanStack Query and your choice of schema validation, but everything is built with just Ant Design and React as a base.
 
 <Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
+  <Card
+    title="Type-safe Forms"
+    description="Full autocomplete for field names with types inferred from your schema validators."
+  />
+  <Card
+    title="Schema Validation"
+    description="First-class support for Standard Schema validators like Zod, Valibot, and ArkType."
+  />
+  <Card
+    title="Form + Query Integration"
+    description="Connect filter forms to TanStack Query with minimal boilerplate using useTable."
+  />
+  <Card
+    title="Easy Migration"
+    description="If you're already using Ant Design, it's mostly adjusting imports. No framework lock-in."
+  />
 </Cards>
+
+## Standard Schema Support
+
+antd-forge supports [Standard Schema](https://github.com/standard-schema/standard-schema) specification, which means you can use any compatible validation library:
+
+- **[Zod](https://zod.dev)** - TypeScript-first schema validation
+- **[Valibot](https://valibot.dev)** - Lightweight schema library
+- **[ArkType](https://arktype.io)** - TypeScript's 1:1 validator
+
+Simply pass your schema to the `validator` option and antd-forge handles the rest: validation on submit, error mapping to fields, and automatic required field detection.
