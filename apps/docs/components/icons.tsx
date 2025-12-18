@@ -1,4 +1,5 @@
 import Image, { ImageProps } from "next/image";
+import React from "react";
 
 export function AntDesign(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -104,5 +105,32 @@ export function StandardSchema(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export function TanStackColor(props: Omit<ImageProps, "src" | "alt">) {
-  return <Image src="/logos/tanstack-color.png" alt="TanStack Logo" {...props} />;
+  return (
+    <Image src="/logos/tanstack-color.png" alt="TanStack Logo" {...props} />
+  );
+}
+
+export function AntdForge({
+  variant = "color",
+  ...props
+}: React.SVGProps<SVGSVGElement> & { variant?: "color" | "mono" }) {
+  return (
+    <svg
+      viewBox="0 0 260 260"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path d="M171 179H94V144H171V179Z" fill="#4338CA" />
+      <path
+        d="M178.75 179C191.016 179 202.777 183.85 211.45 192.477C220.124 201.103 225 212.8 225 225C225 231.1 222.562 236.948 218.225 241.262C213.888 245.575 208.008 248 201.875 248H63.125C56.9919 248 51.1117 245.575 46.7749 241.262C42.4381 236.948 40 231.1 40 225C40 212.8 44.8762 201.103 53.5498 192.477C62.2234 183.85 73.9837 179 86.25 179H178.75Z"
+        fill="#4338CA"
+      />
+      <circle cx={34} cy={63} r={28} fill="#F87171" />
+      <path
+        d="M236.823 28C242.97 28 248.864 30.446 253.21 34.7969C257.556 39.1477 260 45.0472 260 51.2002L259.887 55.7988C258.751 78.7364 249.147 100.504 232.848 116.82C215.462 134.224 191.881 144 167.294 144H86.1768C80.03 144 74.1365 141.554 69.79 137.203C65.4436 132.852 63 126.953 63 120.8V97.7061C63 94.3347 64.2895 91.1251 66.1904 88.3408C71.118 81.1235 74 72.3985 74 63C74 55.6928 72.2573 48.7932 69.166 42.6924C67.8443 40.0839 67.7233 36.8657 69.79 34.7969C74.1365 30.4461 80.03 28 86.1768 28H236.823Z"
+        fill="#615FFF"
+      />
+    </svg>
+  );
 }

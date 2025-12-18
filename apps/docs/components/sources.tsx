@@ -1,4 +1,9 @@
-import { AntDesign, StandardSchema, TanStackColor } from "@/components/icons";
+import {
+  AntDesign,
+  AntdForge,
+  StandardSchema,
+  TanStackColor,
+} from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 
 const sourceIconMap = [
@@ -16,7 +21,13 @@ const sourceIconMap = [
     name: "TanStack",
     icon: <TanStackColor width={16} height={16} />,
     match: (url: string) => url.includes("tanstack.com"),
-  }
+  },
+  {
+    name: "Ant Design Forge",
+    icon: <AntdForge width={16} height={16} />,
+    match: (url: string) =>
+      url.includes("antd-forge.dyrhoi.com") || url.startsWith("/"),
+  },
 ];
 
 interface SourceListProps {

@@ -1,9 +1,17 @@
-import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+import { AntdForge } from "@/components/icons";
+import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
-      title: 'Ant Design Forge',
+      title: (
+        <div className="flex items-center gap-2">
+          <AntdForge className="w-5" />
+          <span>
+            Ant Design <span className="font-bold">Forge</span>
+          </span>
+        </div>
+      ),
     },
   };
 }
