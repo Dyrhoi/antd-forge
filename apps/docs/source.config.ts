@@ -15,7 +15,7 @@ export const docs = defineDocs({
   docs: {
     schema: frontmatterSchema.extend({
       // Custom frontmatter fields
-      sources: z.record(z.string(), z.url()).optional(),
+      sources: z.record(z.string(), z.string()).optional(),
     }),
     postprocess: {
       includeProcessedMarkdown: true,

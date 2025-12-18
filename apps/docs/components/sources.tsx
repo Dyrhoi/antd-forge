@@ -1,4 +1,4 @@
-import { AntDesign, StandardSchema } from "@/components/icons";
+import { AntDesign, StandardSchema, TanStackColor } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 
 const sourceIconMap = [
@@ -12,6 +12,11 @@ const sourceIconMap = [
     icon: <StandardSchema />,
     match: (url: string) => url.includes("standardschema.dev"),
   },
+  {
+    name: "TanStack",
+    icon: <TanStackColor width={16} height={16} />,
+    match: (url: string) => url.includes("tanstack.com"),
+  }
 ];
 
 interface SourceListProps {

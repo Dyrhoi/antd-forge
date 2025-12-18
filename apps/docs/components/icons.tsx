@@ -1,3 +1,5 @@
+import Image, { ImageProps } from "next/image";
+
 export function AntDesign(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" {...props}>
@@ -99,4 +101,8 @@ export function StandardSchema(props: React.SVGProps<SVGSVGElement>) {
       <rect x="148" y="136" width="80" height="240" rx="20" fill="#E9D329" />
     </svg>
   );
+}
+
+export function TanStackColor(props: Omit<ImageProps, "src" | "alt">) {
+  return <Image src="/logos/tanstack-color.png" alt="TanStack Logo" {...props} />;
 }
