@@ -9,15 +9,12 @@ import { mockProducts, type Product } from "./mockdata/products";
 const schema = z.object({
   search: z.string().optional(),
   category: z.array(z.enum(["electronics", "furniture"])).optional(),
-  minPrice: z.coerce.number().optional(),
-  maxPrice: z.coerce.number().optional(),
 });
 
 type Filters = z.infer<typeof schema>;
-type Pagination = { current: number; pageSize: number };
 
-// Simulated API fetch with server-side pagination
-async function fetchProducts(filters: Filters, pagination: Pagination) {
+// Simulated API fetch - returns ALL data, no pagination
+async function fetchAllProducts(filters: Filters) {
   await new Promise((resolve) => setTimeout(resolve, 300));
 
   let filtered = [...mockProducts];
@@ -28,46 +25,32 @@ async function fetchProducts(filters: Filters, pagination: Pagination) {
   }
 
   if (filters.category && filters.category.length > 0) {
-    filtered = filtered.filter((p) => filters.category!.includes(p.category));
+    filtered = filtered.filter((p) => filters.category?.includes(p.category));
   }
 
-  if (filters.minPrice !== undefined) {
-    filtered = filtered.filter((p) => p.price >= filters.minPrice!);
-  }
-
-  if (filters.maxPrice !== undefined) {
-    filtered = filtered.filter((p) => p.price <= filters.maxPrice!);
-  }
-
-  // Server-side pagination
-  const start = (pagination.current - 1) * pagination.pageSize;
-  const paged = filtered.slice(start, start + pagination.pageSize);
-
-  return {
-    items: paged,
-    totalCount: filtered.length,
-  };
+  return filtered;
 }
 
-// Colocated query options - can be defined in a separate file
-const productsQueryOptions = createTableQueryOptions<Filters, Product>()(
-  ({ filters, pagination }) =>
-    queryOptions({
-      queryKey: ["products", filters, pagination],
-      queryFn: () => fetchProducts(filters, pagination),
-      select: (data) => ({
-        data: data.items,
-        total: data.totalCount,
-      }),
-      staleTime: 30 * 1000, // 30 seconds
-    }),
+// Client pagination mode - notice the `{ pagination: { mode: 'client' } }` config
+const productsQueryOptions = createTableQueryOptions<Filters, Product>({
+  pagination: { mode: "client" },
+})(({ filters }) =>
+  queryOptions({
+    queryKey: ["products-client", filters],
+    queryFn: () => fetchAllProducts(filters),
+    // No need for `select` to transform to { data, total } - just return the array
+    staleTime: 30 * 1000,
+  }),
 );
 
-export default function UseTableQueryOptionsExample() {
+export default function UseTableClientPaginationExample() {
   const { formProps, FormItem, tableProps, query } = useTable({
     validator: schema,
     queryOptions: productsQueryOptions,
-    pagination: { initial: { pageSize: 5 } }, // Show pagination with 5 items per page
+    pagination: {
+      mode: "client",
+      initial: { pageSize: 5 },
+    },
   });
 
   return (
@@ -87,12 +70,6 @@ export default function UseTableQueryOptionsExample() {
             <Select.Option value="furniture">Furniture</Select.Option>
           </Select>
         </FormItem>
-        <FormItem name="minPrice">
-          <Input type="number" placeholder="Min $" style={{ width: 90 }} />
-        </FormItem>
-        <FormItem name="maxPrice">
-          <Input type="number" placeholder="Max $" style={{ width: 90 }} />
-        </FormItem>
         <Button type="primary" htmlType="submit">
           Search
         </Button>
@@ -100,9 +77,10 @@ export default function UseTableQueryOptionsExample() {
 
       <Table
         {...tableProps}
-        pagination={{ ...tableProps.pagination, showSizeChanger: true }}
         title={() =>
-          query.isFetching ? "Loading..." : `${query.data?.total ?? 0} results`
+          query.isFetching
+            ? "Loading..."
+            : `${(query.data as Product[] | undefined)?.length ?? 0} results`
         }
         columns={[
           { title: "Name", dataIndex: "name", key: "name" },
@@ -111,7 +89,7 @@ export default function UseTableQueryOptionsExample() {
             dataIndex: "category",
             key: "category",
             render: (cat: string) => (
-              <Tag color={cat === "electronics" ? "blue" : "green"}>{cat}</Tag>
+              <Tag color={cat === "electronics" ? "blue" : "orange"}>{cat}</Tag>
             ),
           },
           {
@@ -120,16 +98,7 @@ export default function UseTableQueryOptionsExample() {
             key: "price",
             render: (price: number) => `$${price}`,
           },
-          {
-            title: "Stock",
-            dataIndex: "stock",
-            key: "stock",
-            render: (stock: number) => (
-              <span style={{ color: stock < 20 ? "red" : "inherit" }}>
-                {stock}
-              </span>
-            ),
-          },
+          { title: "Stock", dataIndex: "stock", key: "stock" },
         ]}
         rowKey="id"
         size="small"

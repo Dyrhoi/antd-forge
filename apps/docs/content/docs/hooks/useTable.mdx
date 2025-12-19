@@ -159,3 +159,67 @@ const { tableProps } = useTable({
     }),
 });
 ```
+
+### Client-Side Pagination
+
+By default, `useTable` uses server-side pagination where you handle pagination in your API. For smaller datasets, you can use **client-side pagination** where Ant Design's Table handles pagination from the full dataset.
+
+With client mode:
+- Your search/query function receives **no pagination props** - just filters
+- Return a **plain array** instead of `{ data, total }`
+- Ant Design's Table automatically paginates from the full `dataSource`
+- The `pageSize` setting controls how many rows display per page
+
+```tsx
+// Client pagination - fetch all data, let Table handle pagination
+const { tableProps } = useTable({
+  validator: schema,
+  pagination: { mode: "client", initial: { pageSize: 10 } },
+  search: async ({ filters }) => {
+    // Note: no `pagination` in props for client mode
+    const allItems = await fetchAllUsers(filters);
+    return allItems; // Return array directly, not { data, total }
+  },
+});
+```
+
+### Client Pagination with TanStack Query
+
+When using `queryOptions` with client pagination, use `createTableQueryOptions` with the client config:
+
+```tsx
+import { createTableQueryOptions, useTable } from "@dyrhoi/antd-forge";
+import { queryOptions } from "@tanstack/react-query";
+
+// Define query options with client pagination mode
+const usersQueryOptions = createTableQueryOptions<Filters, User>({
+  pagination: { mode: "client" },
+})(({ filters }) =>
+  queryOptions({
+    queryKey: ["users", filters],
+    queryFn: () => fetchAllUsers(filters), // Returns User[]
+    // No need to transform to { data, total }
+  }),
+);
+
+function UsersTable() {
+  const { tableProps } = useTable({
+    validator: schema,
+    queryOptions: usersQueryOptions,
+    pagination: { mode: "client", initial: { pageSize: 10 } },
+  });
+  // ...
+}
+```
+
+<ExamplePreview src="examples/use-table-client-pagination-example.tsx" files={[{ path: "examples/mockdata/products.ts", name: "products.ts" }]} />
+
+### When to Use Client vs Server Pagination
+
+| Aspect | Server Mode (default) | Client Mode |
+|--------|----------------------|-------------|
+| **Best for** | Large datasets | Small datasets (under 1000 rows) |
+| **Data fetching** | Fetch per page | Fetch all at once |
+| **Return type** | `{ data, total }` | `TData[]` |
+| **Pagination logic** | Your API | Ant Design Table |
+| **Network usage** | Lower per request | Higher initial load |
