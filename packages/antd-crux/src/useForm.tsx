@@ -1,6 +1,6 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
 import { Form, FormInstance, FormProps } from "antd";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm as useFormSF } from "sunflower-antd";
 import { createFormItem, TypedFormItemComponent } from "./FormItem";
 import { createFormList, TypedFormListComponent } from "./FormList";
@@ -143,14 +143,22 @@ export function useForm<
     });
   };
 
-  const FormItem = createFormItem<TResolvedValues>({
-    validator,
-    requiredFields,
-  });
+  const FormItem = useMemo(
+    () =>
+      createFormItem<TResolvedValues>({
+        validator,
+        requiredFields,
+      }),
+    [validator, requiredFields],
+  );
 
-  const FormList = createFormList<TResolvedValues>({
-    validator,
-  });
+  const FormList = useMemo(
+    () =>
+      createFormList<TResolvedValues>({
+        validator,
+      }),
+    [validator],
+  );
 
   return {
     form: formAnt,
