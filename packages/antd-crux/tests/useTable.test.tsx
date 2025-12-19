@@ -287,6 +287,111 @@ describe("useTable", () => {
   });
 
   describe("pagination", () => {
+    describe("pagination mode client (runtime)", () => {
+      it("should call search with pagination undefined and bind dataSource to returned array", async () => {
+        const searchFn = vi.fn().mockResolvedValue(mockUsers);
+
+        const { result } = renderHook(
+          () =>
+            useTable({
+              validator: schema,
+              pagination: { mode: "client" },
+              search: searchFn,
+            }),
+          { wrapper: createWrapper() },
+        );
+
+        await waitFor(() => expect(result.current.query.isSuccess).toBe(true));
+
+        expect(searchFn).toHaveBeenCalledTimes(1);
+        expect(searchFn).toHaveBeenCalledWith({
+          filters: {},
+          pagination: undefined,
+        });
+
+        expect(result.current.tableProps.dataSource).toEqual(mockUsers);
+
+        const pagination = result.current.tableProps.pagination;
+        expect(pagination && typeof pagination === "object").toBe(true);
+        if (pagination && typeof pagination === "object") {
+          expect((pagination as { pageSize?: number }).pageSize).toBe(10);
+          expect("current" in pagination).toBe(false);
+          expect("total" in pagination).toBe(false);
+        }
+
+        expect(result.current.pagination.total).toBeUndefined();
+      });
+
+      it("should not refetch on page change, but should update local pagination state", async () => {
+        const searchFn = vi.fn().mockResolvedValue(mockUsers);
+
+        const { result } = renderHook(
+          () =>
+            useTable({
+              validator: schema,
+              pagination: { mode: "client" },
+              search: searchFn,
+            }),
+          { wrapper: createWrapper() },
+        );
+
+        await waitFor(() => expect(result.current.query.isSuccess).toBe(true));
+        expect(searchFn).toHaveBeenCalledTimes(1);
+
+        // Simulate page change via table (keep same pageSize so current does not reset)
+        act(() => {
+          result.current.tableProps.pagination &&
+            typeof result.current.tableProps.pagination === "object" &&
+            result.current.tableProps.pagination.onChange?.(3, 10);
+        });
+
+        await waitFor(() => {
+          expect(result.current.pagination.current).toBe(3);
+          expect(result.current.pagination.pageSize).toBe(10);
+        });
+
+        // Client mode should not refetch on pagination changes
+        expect(searchFn).toHaveBeenCalledTimes(1);
+      });
+
+      it("should reset to page 1 and refetch when filters change", async () => {
+        const searchFn = vi.fn().mockResolvedValue(mockUsers);
+
+        const { result } = renderHook(
+          () =>
+            useTable({
+              validator: schema,
+              pagination: { mode: "client" },
+              search: searchFn,
+            }),
+          { wrapper: createWrapper() },
+        );
+
+        await waitFor(() => expect(result.current.query.isSuccess).toBe(true));
+
+        // Move to page 3
+        act(() => {
+          result.current.tableProps.pagination &&
+            typeof result.current.tableProps.pagination === "object" &&
+            result.current.tableProps.pagination.onChange?.(3, 10);
+        });
+        await waitFor(() => expect(result.current.pagination.current).toBe(3));
+
+        // Submit form with new filters
+        await act(async () => {
+          await result.current.formProps.onFinish?.({ filter: "new" });
+        });
+
+        await waitFor(() => expect(result.current.pagination.current).toBe(1));
+        await waitFor(() => expect(searchFn).toHaveBeenCalledTimes(2));
+
+        expect(searchFn).toHaveBeenLastCalledWith({
+          filters: { filter: "new" },
+          pagination: undefined,
+        });
+      });
+    });
+
     it("should use default pagination values (current: 1, pageSize: 10)", async () => {
       const searchFn = vi.fn().mockResolvedValue({ data: [], total: 100 });
 
@@ -421,8 +526,8 @@ describe("useTable", () => {
       expect(result.current.pagination.total).toBe(42);
       expect(
         result.current.tableProps.pagination &&
-        typeof result.current.tableProps.pagination === "object" &&
-        result.current.tableProps.pagination.total,
+          typeof result.current.tableProps.pagination === "object" &&
+          result.current.tableProps.pagination.total,
       ).toBe(42);
     });
   });
