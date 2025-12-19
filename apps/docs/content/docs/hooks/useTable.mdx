@@ -8,8 +8,6 @@ sources:
   useForm: /docs/hooks/useForm
 ---
 
-<ExamplePreview src="examples/use-table-example.tsx" files={[{ path: "examples/mockdata/products.ts", name: "products.ts" }]} />
-
 ## Overview
 
 `useTable` combines the power of `useForm` with [TanStack Query](https://tanstack.com/query/latest) to create a seamless connection between filter forms and data tables. It manages filter state, query execution, and table props automatically.
@@ -23,6 +21,8 @@ sources:
 - **Colocated query definitions** - Define query options separately with `createTableQueryOptions`
 
 ## Usage
+
+See the [Basic example](#basic) for a live demo.
 
 {/* prettier-ignore */}
 ```tsx twoslash
@@ -91,7 +91,7 @@ function UsersTable() {
 
 ### Without TanStack Query
 
-If you're not using TanStack Query, you can use the simpler `search` function instead.
+If you're not using TanStack Query, you can use the simpler `search` function instead. See the [Basic search example](#basic-search) for a live demo.
 
 ```tsx
 const { formProps, FormItem, tableProps } = useTable({
@@ -102,16 +102,6 @@ const { formProps, FormItem, tableProps } = useTable({
   },
 });
 ```
-
-## Examples
-
-### Default `queryOptions`
-
-<ExamplePreview src="examples/use-table-example.tsx" files={[{ path: "examples/mockdata/products.ts", name: "products.ts" }]} />
-
-### Basic without TanStack Query using `search`
-
-<ExamplePreview src="examples/use-table-basic-example.tsx" files={[{ path: "examples/mockdata/users.ts", name: "users.ts" }]} />
 
 ## Pagination
 
@@ -162,7 +152,7 @@ const { tableProps } = useTable({
 
 ### Client-Side Pagination
 
-By default, `useTable` uses server-side pagination where you handle pagination in your API. For smaller datasets, you can use **client-side pagination** where Ant Design's Table handles pagination from the full dataset.
+By default, `useTable` uses server-side pagination where you handle pagination in your API. For smaller datasets, you can use **client-side pagination** where Ant Design's Table handles pagination from the full dataset. See the [Client Pagination example](#client-pagination) for a live demo.
 
 With client mode:
 - Your search/query function receives **no pagination props** - just filters
@@ -212,8 +202,6 @@ function UsersTable() {
 }
 ```
 
-<ExamplePreview src="examples/use-table-client-pagination-example.tsx" files={[{ path: "examples/mockdata/products.ts", name: "products.ts" }]} />
-
 ### When to Use Client vs Server Pagination
 
 | Aspect | Server Mode (default) | Client Mode |
@@ -223,3 +211,43 @@ function UsersTable() {
 | **Return type** | `{ data, total }` | `TData[]` |
 | **Pagination logic** | Your API | Ant Design Table |
 | **Network usage** | Lower per request | Higher initial load |
+
+## Auto Submit
+
+Since `useTable` is built on `useForm`, it inherits the `autoSubmit` option. This is particularly useful for filter forms where you want the table to update as the user types—no submit button required. See the [Auto Submit example](#auto-submit) for a live demo.
+
+For full documentation on modes and configuration, see [useForm - Auto Submit](/docs/hooks/useForm#auto-submit).
+
+```tsx
+const { formProps, FormItem, tableProps } = useTable({
+  validator: schema,
+  autoSubmit: { mode: "auto", debounce: 400 },
+  search: ({ filters, pagination }) => fetchData(filters, pagination),
+});
+```
+
+## Examples
+
+### Basic
+
+Using `queryOptions` with TanStack Query for data fetching.
+
+<ExamplePreview src="examples/use-table-example.tsx" files={[{ path: "examples/mockdata/products.ts", name: "products.ts" }]} />
+
+### Basic Search
+
+Using the simpler `search` function without TanStack Query.
+
+<ExamplePreview src="examples/use-table-basic-example.tsx" files={[{ path: "examples/mockdata/users.ts", name: "users.ts" }]} />
+
+### Client Pagination
+
+Fetching all data and letting Ant Design Table handle pagination.
+
+<ExamplePreview src="examples/use-table-client-pagination-example.tsx" files={[{ path: "examples/mockdata/products.ts", name: "products.ts" }]} />
+
+### Auto Submit
+
+Automatically updating the table as the user types in the filter form.
+
+<ExamplePreview src="examples/use-table-auto-submit-example.tsx" files={[{ path: "examples/mockdata/products.ts", name: "products.ts" }]} />

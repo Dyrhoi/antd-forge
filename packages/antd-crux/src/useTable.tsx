@@ -317,19 +317,31 @@ export function useTable<
   TPaginationMode
 > {
   type TResolvedValues = ResolveFormValues<TSchema, TFormValues>;
-  const formResult = useForm(opts) as UseFormReturn<TResolvedValues>;
+
   const simpleQueryKey = useMemo(() => {
     return ["antd-forge-table", Math.random().toString(36).substring(2, 15)];
   }, []);
 
   const [filters, setFilters] = useState<TResolvedValues>(
-    formResult.formProps.initialValues as TResolvedValues,
+    {} as TResolvedValues,
   );
 
   const [paginationState, setPaginationState] = useState<PaginationProps>({
     current: opts.pagination?.initial?.current ?? DEFAULT_CURRENT_PAGE,
     pageSize: opts.pagination?.initial?.pageSize ?? DEFAULT_PAGE_SIZE,
   });
+
+  const onFinish = async (values: TResolvedValues) => {
+    setFilters(values);
+    // Reset to page 1 when filters change
+    setPaginationState((prev) => ({ ...prev, current: 1 }));
+    return await opts.onFinish?.(values);
+  };
+
+  const formResult = useForm({
+    ...opts,
+    onFinish,
+  }) as UseFormReturn<TResolvedValues>;
 
   const isClientMode = opts.pagination?.mode === "client";
 
@@ -358,13 +370,6 @@ export function useTable<
     });
   };
 
-  const onFinish = async (values: TResolvedValues) => {
-    setFilters(values);
-    // Reset to page 1 when filters change
-    setPaginationState((prev) => ({ ...prev, current: 1 }));
-    return await opts.onFinish?.(values);
-  };
-
   // For client mode, dataSource is the raw array
   // For server mode, dataSource is query.data.data
   const dataSource = isClientMode
@@ -379,10 +384,6 @@ export function useTable<
 
   return {
     ...formResult,
-    formProps: {
-      ...formResult.formProps,
-      onFinish,
-    },
     tableProps: {
       dataSource,
       loading: !query.isFetched,

@@ -60,12 +60,91 @@ function MyForm() {
 
 {/* prettier-ignore-end */}
 
+## Auto Submit
+
+The `autoSubmit` option enables automatic form submission without requiring a submit button. This is useful for search forms, filters, and live previews. See the [Auto Submit example](#auto-submit) for a live demo.
+
+### How It Works
+
+Auto submit uses a **leading + trailing debounce** pattern:
+
+1. **Leading edge**: Submits immediately on the first change (instant feedback for Select, Radio, etc.)
+2. **Trailing edge**: Submits again after the debounce period if values changed (catches rapid typing)
+
+This gives you the best of both worlds—instant response for discrete controls like dropdowns and radio buttons, while still debouncing rapid text input.
+
+### Modes
+
+| Mode | Description |
+|------|-------------|
+| `'off'` | (Default) No automatic submission. Form submits only on explicit submit action. |
+| `'auto'` | Automatically submits when any field value changes using leading + trailing debounce. |
+
+### Basic Usage
+
+```tsx
+const { formProps, FormItem } = useForm({
+  validator: schema,
+  autoSubmit: "auto",
+  onFinish: (values) => {
+    // Called immediately on first change, then debounced for rapid changes
+  },
+});
+```
+
+### Custom Debounce
+
+By default, `auto` mode uses a 300ms debounce for the trailing edge. You can customize this:
+
+```tsx
+const { formProps, FormItem } = useForm({
+  validator: schema,
+  autoSubmit: { mode: "auto", debounce: 500 }, // 500ms debounce
+  onFinish: (values) => {
+    // Leading edge: fires immediately
+    // Trailing edge: fires 500ms after user stops changing values
+  },
+});
+```
+
+## Dynamic Fields (FormList)
+
+`useForm` provides a typed `FormList` component for managing dynamic arrays of fields. See the [FormList example](#formlist-1) for a live demo.
+
+```tsx
+const { formProps, FormList } = useForm({
+  validator: schema,
+  onFinish: (values) => console.log(values),
+});
+
+return (
+  <Form {...formProps}>
+    <FormList name={["items"]}>
+      {(fields, { add, remove }, { errors }) => (
+        <>
+          {fields.map((field) => (
+            <Form.Item key={field.key} {...field}>
+              <Input />
+            </Form.Item>
+          ))}
+          <Button onClick={() => add()}>Add Item</Button>
+        </>
+      )}
+    </FormList>
+  </Form>
+);
+```
+
 ## Examples
 
-### Default
+### Basic Form
 
 <ExamplePreview src="examples/use-form-example.tsx" />
 
-### Form with Dynamic Fields (FormList)
+### FormList
 
 <ExamplePreview src="examples/use-form-list-example.tsx" />
+
+### Auto Submit
+
+<ExamplePreview src="examples/use-form-auto-submit-example.tsx" />

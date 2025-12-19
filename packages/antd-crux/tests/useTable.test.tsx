@@ -1,9 +1,17 @@
-import { renderHook, waitFor, act } from "@testing-library/react";
+import {
+  renderHook,
+  waitFor,
+  act,
+  render,
+  fireEvent,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { z } from "zod";
 import { useTable } from "../src/useTable";
+import * as useFormModule from "../src/useForm";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
+import { Form, Input } from "antd";
 
 // ============================================================================
 // Test Setup
@@ -504,8 +512,8 @@ describe("useTable", () => {
       await waitFor(() => expect(result.current.pagination.current).toBe(3));
 
       // Submit form with new filters
-      act(() => {
-        result.current.formProps.onFinish?.({ filter: "new" });
+      await act(async () => {
+        await result.current.formProps.onFinish?.({ filter: "new" });
       });
 
       expect(result.current.pagination.current).toBe(1);
@@ -529,6 +537,93 @@ describe("useTable", () => {
           typeof result.current.tableProps.pagination === "object" &&
           result.current.tableProps.pagination.total,
       ).toBe(42);
+    });
+  });
+
+  describe("useForm integration", () => {
+    it("should pass autoSubmit option through to useForm", async () => {
+      const useFormSpy = vi.spyOn(useFormModule, "useForm");
+
+      const searchFn = vi.fn().mockResolvedValue({
+        data: mockUsers,
+        total: mockUsers.length,
+      });
+
+      renderHook(
+        () =>
+          useTable({
+            validator: schema,
+            autoSubmit: "auto",
+            search: searchFn,
+          }),
+        { wrapper: createWrapper() },
+      );
+
+      // Verify useForm was called with autoSubmit option
+      expect(useFormSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          autoSubmit: "auto",
+          validator: schema,
+        }),
+      );
+
+      useFormSpy.mockRestore();
+    });
+
+    it("should call onValuesChange when user changes input with autoSubmit enabled", async () => {
+      const onValuesChangeSpy = vi.fn();
+
+      const searchFn = vi.fn().mockResolvedValue({
+        data: mockUsers,
+        total: mockUsers.length,
+      });
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false, gcTime: 0 } },
+      });
+
+      function TestComponent() {
+        const { formProps, FormItem } = useTable({
+          validator: schema,
+          autoSubmit: "auto",
+          search: searchFn,
+        });
+
+        // Wrap onValuesChange to spy on it
+        const wrappedFormProps = {
+          ...formProps,
+          onValuesChange: (
+            changedValues: Partial<FilterValues>,
+            allValues: FilterValues,
+          ) => {
+            onValuesChangeSpy(changedValues, allValues);
+            formProps.onValuesChange?.(changedValues, allValues);
+          },
+        };
+
+        return (
+          <Form {...wrappedFormProps}>
+            <FormItem name="filter">
+              <Input data-testid="filter-input" />
+            </FormItem>
+          </Form>
+        );
+      }
+
+      const { getByTestId } = render(
+        <QueryClientProvider client={queryClient}>
+          <TestComponent />
+        </QueryClientProvider>,
+      );
+
+      const input = getByTestId("filter-input");
+      fireEvent.change(input, { target: { value: "test" } });
+
+      // Verify onValuesChange was called with the new value
+      expect(onValuesChangeSpy).toHaveBeenCalledWith(
+        { filter: "test" },
+        { filter: "test" },
+      );
     });
   });
 });

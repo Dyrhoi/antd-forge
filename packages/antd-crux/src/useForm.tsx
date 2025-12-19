@@ -6,6 +6,7 @@ import { createFormItem, TypedFormItemComponent } from "./FormItem";
 import { createFormList, TypedFormListComponent } from "./FormList";
 import { FieldData } from "./internal/antd-types";
 import { standardValidate } from "./internal/standardSchemaValidator";
+import { useDebounceCallback } from "./internal/useDebounceCallback";
 import { warning } from "./internal/warning";
 
 // ============================================================================
@@ -27,6 +28,36 @@ export type ResolveFormValues<TSchema, TExplicit> = unknown extends TExplicit
 // ============================================================================
 // Public Types
 // ============================================================================
+
+/**
+ * Auto-submit mode for the form.
+ * - `'off'` (default): No automatic submission. Form submits only on explicit submit action.
+ * - `'auto'`: Automatically submits using leading + trailing debounce (instant on first change, debounced for rapid changes).
+ */
+export type AutoSubmitMode = "off" | "auto";
+
+/**
+ * Configuration for auto-submit behavior.
+ */
+export interface AutoSubmitConfig {
+  /**
+   * The auto-submit mode.
+   * @default 'off'
+   */
+  mode: AutoSubmitMode;
+
+  /**
+   * Debounce delay in milliseconds.
+   * Only applicable when mode is 'auto'.
+   * @default 300
+   */
+  debounce?: number;
+}
+
+/**
+ * Auto-submit option can be a mode string or a full config object.
+ */
+export type AutoSubmitOption = AutoSubmitMode | AutoSubmitConfig;
 
 export interface UseFormReturn<TParsedValues = unknown> {
   /**
@@ -89,6 +120,61 @@ export interface UseFormOptions<
    * @see https://github.com/standard-schema/standard-schema
    */
   validator?: TSchema;
+
+  /**
+   * Configure automatic form submission behavior.
+   *
+   * Can be a mode string or a configuration object:
+   * - `'off'` (default): No automatic submission
+   * - `'auto'`: Submit automatically using leading + trailing debounce
+   *   - Leading edge: Fires immediately on first change (instant for Select, Radio, etc.)
+   *   - Trailing edge: Fires after debounce if values changed (for rapid typing)
+   *
+   * Or as a config object:
+   * ```ts
+   * { mode: 'auto', debounce: 500 }
+   * ```
+   *
+   * @default 'off'
+   *
+   * @example
+   * ```tsx
+   * // Simple mode
+   * useForm({ autoSubmit: 'auto', onFinish: handleSearch });
+   *
+   * // With custom debounce
+   * useForm({
+   *   autoSubmit: { mode: 'auto', debounce: 500 },
+   *   onFinish: handleSearch
+   * });
+   * ```
+   */
+  autoSubmit?: AutoSubmitOption;
+}
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const DEFAULT_DEBOUNCE_MS = 300;
+
+// ============================================================================
+// Internal Helpers
+// ============================================================================
+
+/**
+ * Normalizes the autoSubmit option into a consistent config object.
+ */
+function normalizeAutoSubmitConfig(
+  option: AutoSubmitOption | undefined,
+): AutoSubmitConfig {
+  if (!option || option === "off") {
+    return { mode: "off" };
+  }
+  if (typeof option === "string") {
+    return { mode: option };
+  }
+  return option;
 }
 
 // ============================================================================
@@ -103,7 +189,11 @@ export function useForm<
 ): UseFormReturn<ResolveFormValues<TSchema, TFormValues>> {
   type TResolvedValues = ResolveFormValues<TSchema, TFormValues>;
 
-  const { onFinish: onFinishFromProps, validator } = opts ?? {};
+  const { onFinish: onFinishFromProps, validator, autoSubmit } = opts ?? {};
+
+  // Normalize autoSubmit config
+  const autoSubmitConfig = normalizeAutoSubmitConfig(autoSubmit);
+  const debounceMs = autoSubmitConfig.debounce ?? DEFAULT_DEBOUNCE_MS;
 
   const [formAnt] = Form.useForm<TResolvedValues>();
   const formSF = useFormSF({ form: formAnt });
@@ -143,6 +233,25 @@ export function useForm<
     });
   };
 
+  // Leading+trailing debounce for auto-submit:
+  // - Leading: Instant feedback for discrete controls (Select, Radio, Checkbox)
+  // - Trailing: Debounced for rapid typing in text inputs
+  // - Equality check prevents duplicate submissions when values haven't changed
+  const debouncedFinish = useDebounceCallback(onFinish, {
+    delay: debounceMs,
+    leading: true,
+    trailing: true,
+    equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b),
+  });
+
+  const onValuesChange: FormProps<TResolvedValues>["onValuesChange"] = (
+    _changedValues,
+    allValues,
+  ) => {
+    if (autoSubmitConfig.mode !== "auto") return;
+    debouncedFinish(allValues);
+  };
+
   const FormItem = useMemo(
     () =>
       createFormItem<TResolvedValues>({
@@ -160,14 +269,20 @@ export function useForm<
     [validator],
   );
 
+  // Build formProps based on autoSubmit mode
+  const formProps: FormProps<TResolvedValues> = {
+    ...formSF.formProps,
+    onFinish,
+    ...(autoSubmitConfig.mode === "auto" && {
+      onValuesChange,
+    }),
+  };
+
   return {
     form: formAnt,
     FormItem,
     FormList,
-    formProps: {
-      ...formSF.formProps,
-      onFinish,
-    },
+    formProps,
   };
 }
 
