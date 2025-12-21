@@ -1,4 +1,12 @@
 /**
+ * Recursively makes all properties of a type optional, including nested objects and arrays.
+ */
+export type DeepPartial<T> = T extends Array<infer U>
+  ? Array<DeepPartial<U>>
+  : T extends object
+    ? { [K in keyof T]?: DeepPartial<T[K]> }
+    : T;
+/**
  * Generic path and type utilities for navigating nested object structures.
  * These are not hook-specific and can be reused across the library.
  */
@@ -65,3 +73,24 @@ export type InnerPaths<
           | InnerPaths<T[K], [...Prefix, K]>;
       }[keyof T & (string | number)]
   : never;
+
+  
+/**
+ * Recursively infers the type at a given name path tuple in T.
+ * @template T - The root type.
+ * @template P - The tuple path to navigate.
+ * @returns The type at the given path, or never if invalid.
+ *
+ * @example
+ * type Input = { user: { username: string } };
+ * type Value1 = NamePathValue<Input, ["user"]>; // { username: string }
+ * type Value2 = NamePathValue<Input, ["user", "username"]>; // string
+ */
+export type NamePathValue<T, P extends readonly (string | number | symbol)[]> =
+  P extends [infer K, ...infer Rest]
+    ? K extends keyof T
+      ? Rest extends []
+        ? T[K]
+        : NamePathValue<T[K], Extract<Rest, any[]>>
+      : never
+    : T;

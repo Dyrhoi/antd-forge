@@ -163,7 +163,7 @@ export function createTableQueryOptions<
   TFormValues = unknown,
   TData = unknown,
   TError = Error,
->(config?: CreateTableQueryOptionsConfig<PaginationMode>) {
+>() {
   return <
     TFn extends TableQueryOptionsFn<TFormValues, TData, TError, PaginationMode>,
   >(

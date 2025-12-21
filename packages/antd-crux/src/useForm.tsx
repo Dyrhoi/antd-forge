@@ -8,6 +8,7 @@ import { FieldData } from "./internal/antd-types";
 import { standardValidate } from "./internal/standardSchemaValidator";
 import { useDebounceCallback } from "./internal/useDebounceCallback";
 import { warning } from "./internal/warning";
+import { createUseWatch, UseWatch } from "./useWatch";
 
 // ============================================================================
 // Type Helpers
@@ -93,6 +94,8 @@ export interface UseFormReturn<TParsedValues = unknown> {
    * with a `getName` helper for constructing nested field paths.
    */
   FormList: TypedFormListComponent<TParsedValues>;
+
+  useWatch: UseWatch<TParsedValues>;
 }
 
 export interface UseFormOptions<
@@ -269,6 +272,10 @@ export function useForm<
     [validator],
   );
 
+  const useWatch = useMemo(() => {
+    return createUseWatch({ form: formAnt });
+  }, [formAnt]);
+
   // Build formProps based on autoSubmit mode
   const formProps: FormProps<TResolvedValues> = {
     ...formSF.formProps,
@@ -282,6 +289,7 @@ export function useForm<
     form: formAnt,
     FormItem,
     FormList,
+    useWatch,
     formProps,
   };
 }
