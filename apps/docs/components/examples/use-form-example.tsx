@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "@dyrhoi/antd-forge";
+import { useForm } from "antd-forge";
 import { Button, Form, Input } from "antd";
 import z from "zod";
 

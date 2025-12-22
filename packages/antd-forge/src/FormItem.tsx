@@ -4,7 +4,6 @@ import { ReactNode } from "react";
 import { useFormListContext } from "./FormList";
 import { SimplePathSegment } from "./internal/path-types";
 import { createSchemaRule } from "./internal/standardSchemaValidator";
-import useFormInstance from "antd/es/form/hooks/useFormInstance";
 
 export type TypedFormItemComponent<TParsedValues> = (
   props: FormItemProps<TParsedValues>,

@@ -27,11 +27,11 @@ Somewhat inspired by [refine.dev](https://refine.dev/), but with a slimmer footp
 ## Installation
 
 ```bash
-npm install @dyrhoi/antd-forge
+npm install antd-forge
 # or
-pnpm add @dyrhoi/antd-forge
+pnpm add antd-forge
 # or
-bun add @dyrhoi/antd-forge
+bun add antd-forge
 ```
 
 ## Documentation
@@ -41,7 +41,7 @@ bun add @dyrhoi/antd-forge
 ## Quick Example
 
 ```tsx
-import { useForm } from "@dyrhoi/antd-forge";
+import { useForm } from "antd-forge";
 import { z } from "zod";
 import { Form, Input, Button } from "antd";
 

@@ -31,7 +31,7 @@ import React from "react";
 import { Form, Input, Button, Table } from "antd";
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
-import { useTable } from "@dyrhoi/antd-forge";
+import { useTable } from "antd-forge";
 
 type User = {
   id: number;
@@ -178,7 +178,7 @@ const { tableProps } = useTable({
 When using `queryOptions` with client pagination, use `createTableQueryOptions` with the client config:
 
 ```tsx
-import { createTableQueryOptions, useTable } from "@dyrhoi/antd-forge";
+import { createTableQueryOptions, useTable } from "antd-forge";
 import { queryOptions } from "@tanstack/react-query";
 
 // Define query options with client pagination mode

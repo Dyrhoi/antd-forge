@@ -19,22 +19,22 @@ antd-forge requires the following peer dependencies:
 <Tabs items={["npm", "pnpm", "bun", "yarn"]}>
   <Tab value="npm">
     ```bash
-    npm install @dyrhoi/antd-forge
+    npm install antd-forge
     ```
   </Tab>
   <Tab value="pnpm">
     ```bash
-    pnpm add @dyrhoi/antd-forge
+    pnpm add antd-forge
     ```
   </Tab>
   <Tab value="bun">
     ```bash
-    bun add @dyrhoi/antd-forge
+    bun add antd-forge
     ```
   </Tab>
   <Tab value="yarn">
     ```bash
-    yarn add @dyrhoi/antd-forge
+    yarn add antd-forge
     ```
   </Tab>
 </Tabs>
@@ -49,7 +49,7 @@ antd-forge requires the following peer dependencies:
 Wrap your application with `AntdForgeProvider`. This sets up the internal TanStack Query client used by `useTable`.
 
 ```tsx
-import { AntdForgeProvider } from "@dyrhoi/antd-forge";
+import { AntdForgeProvider } from "antd-forge";
 
 function App() {
   return (
@@ -76,7 +76,7 @@ If you're already using TanStack Query, pass your existing `queryClient` to avoi
 You're ready to go! Here's a quick example with `useForm`:
 
 ```tsx
-import { useForm } from "@dyrhoi/antd-forge";
+import { useForm } from "antd-forge";
 import { Form, Input, Button } from "antd";
 import { z } from "zod";
 

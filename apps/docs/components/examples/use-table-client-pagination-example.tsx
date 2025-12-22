@@ -1,6 +1,6 @@
 "use client";
 
-import { useTable, createTableQueryOptions } from "@dyrhoi/antd-forge";
+import { useTable, createTableQueryOptions } from "antd-forge";
 import { Button, Form, Input, Select, Table, Tag } from "antd";
 import { queryOptions } from "@tanstack/react-query";
 import z from "zod";

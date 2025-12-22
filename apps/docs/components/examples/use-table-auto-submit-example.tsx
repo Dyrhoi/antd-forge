@@ -1,6 +1,6 @@
 "use client";
 
-import { useTable } from "@dyrhoi/antd-forge";
+import { useTable } from "antd-forge";
 import { Form, Input, Select, Table, Tag } from "antd";
 import z from "zod";
 import { mockProducts, type Product } from "./mockdata/products";

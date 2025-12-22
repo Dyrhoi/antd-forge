@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "@dyrhoi/antd-forge";
+import { useForm } from "antd-forge";
 import { Form, Input, Card, Typography } from "antd";
 import z from "zod";
 import { useState } from "react";
@@ -10,7 +10,9 @@ const schema = z.object({
 });
 
 export default function UseFormAutoSubmitExample() {
-  const [submittedValues, setSubmittedValues] = useState<z.infer<typeof schema> | null>(null);
+  const [submittedValues, setSubmittedValues] = useState<z.infer<
+    typeof schema
+  > | null>(null);
   const [submitCount, setSubmitCount] = useState(0);
 
   const { formProps, FormItem } = useForm({
@@ -35,7 +37,9 @@ export default function UseFormAutoSubmitExample() {
           Submit count: {submitCount}
         </Typography.Text>
         <pre style={{ margin: 0, marginTop: 8 }}>
-          {submittedValues ? JSON.stringify(submittedValues, null, 2) : "No submission yet"}
+          {submittedValues
+            ? JSON.stringify(submittedValues, null, 2)
+            : "No submission yet"}
         </pre>
       </Card>
     </div>

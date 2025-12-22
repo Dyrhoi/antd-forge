@@ -1,7 +1,8 @@
 {
-  "name": "@dyrhoi/antd-forge",
+  "name": "antd-forge",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
+  "version": "0.0.1",
   "scripts": {
     "test": "bun vitest",
     "dev": "tsdown --watch",
