@@ -33,8 +33,8 @@ export type TypedFormListFieldData<TParsedValues, TName> = Omit<
 
 export type TypedFormListProps<
   TParsedValues,
-  TName extends
-    FormItemProps<TParsedValues>["name"] = FormItemProps<TParsedValues>["name"],
+  TName extends FormItemProps<TParsedValues>["name"] =
+    FormItemProps<TParsedValues>["name"],
 > = Omit<FormListProps, "name" | "children"> & {
   name: TName;
   children: (
@@ -87,8 +87,6 @@ export function createFormList<TParsedValues>(
       (rule): rule is NonNullable<FormListProps["rules"]>[number] =>
         rule !== undefined,
     );
-
-    console.log(schemaRule, prefixPath, mergedRules);
 
     return (
       <FormListContext.Provider value={{ prefix: prefixPath }}>

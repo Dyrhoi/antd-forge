@@ -1,10 +1,11 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
-import { Form, FormInstance, FormProps } from "antd";
-import { useMemo, useState } from "react";
+import { Form as AntdForm, FormInstance, FormProps } from "antd";
+import { ReactNode, useMemo, useState } from "react";
 import { useForm as useFormSF } from "sunflower-antd";
 import { createFormItem, TypedFormItemComponent } from "./FormItem";
 import { createFormList, TypedFormListComponent } from "./FormList";
 import { FieldData } from "./internal/antd-types";
+import { FormProvider } from "./internal/FormProvider";
 import { standardValidate } from "./internal/standardSchemaValidator";
 import { useDebounceCallback } from "./internal/useDebounceCallback";
 import { warning } from "./internal/warning";
@@ -80,6 +81,8 @@ export interface UseFormReturn<TParsedValues = unknown> {
    * ```
    */
   formProps: FormProps<TParsedValues>;
+
+  Form: (props: { children: ReactNode }) => ReactNode;
 
   /**
    * A typed `Form.Item` component bound to the form's value type.
@@ -198,7 +201,7 @@ export function useForm<
   const autoSubmitConfig = normalizeAutoSubmitConfig(autoSubmit);
   const debounceMs = autoSubmitConfig.debounce ?? DEFAULT_DEBOUNCE_MS;
 
-  const [formAnt] = Form.useForm<TResolvedValues>();
+  const [formAnt] = AntdForm.useForm<TResolvedValues>();
   const formSF = useFormSF({ form: formAnt });
 
   const [requiredFields] = useState<
@@ -285,8 +288,21 @@ export function useForm<
     }),
   };
 
+  const Form = ({ children }: { children: React.ReactNode }) => {
+    return (
+      <FormProvider
+        formInstance={formAnt}
+        validator={validator}
+        requiredFields={requiredFields}
+      >
+        <AntdForm {...formProps}>{children}</AntdForm>
+      </FormProvider>
+    );
+  };
+
   return {
     form: formAnt,
+    Form,
     FormItem,
     FormList,
     useWatch,
@@ -315,5 +331,5 @@ function mapIssuesToFormErrors(
 // Re-exports
 // ============================================================================
 
-export type { TypedFormListProps, TypedFormListFieldData } from "./FormList";
 export type { TypedFormItemComponent } from "./FormItem";
+export type { TypedFormListFieldData, TypedFormListProps } from "./FormList";

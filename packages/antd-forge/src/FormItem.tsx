@@ -1,9 +1,14 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
 import { Form, FormItemProps } from "antd";
-import { ReactNode } from "react";
+import { createContext, ReactNode, useContext } from "react";
 import { useFormListContext } from "./FormList";
 import { SimplePathSegment } from "./internal/path-types";
 import { createSchemaRule } from "./internal/standardSchemaValidator";
+import { NamePath } from "antd/es/form/interface";
+
+const FormItemContext = createContext<{ name: NamePath | undefined } | null>(
+  null,
+);
 
 export type TypedFormItemComponent<TParsedValues> = (
   props: FormItemProps<TParsedValues>,
@@ -12,6 +17,7 @@ export type TypedFormItemComponent<TParsedValues> = (
 type CreateFormItemOptions = {
   validator?: StandardSchemaV1;
   requiredFields?: Array<StandardSchemaV1.Issue["path"]>;
+  mode?: "none" | "inherit";
 };
 
 export function createFormItem<TParsedValues>(
@@ -25,10 +31,11 @@ export function createFormItem<TParsedValues>(
     ...rest
   }) => {
     const formListPrefix = useFormListContext()?.prefix || [];
+    const formItemPrefix = useContext(FormItemContext)?.name || [];
 
     // If we have a formList prefix, check if our name contains the prefix already.
     // If it does, remove the prefix to avoid duplication (FormList already prefixes).
-    let name: FormItemProps<TParsedValues>["name"] = unprefixedName;
+    let name = unprefixedName;
     if (formListPrefix.length > 0 && unprefixedName !== undefined) {
       const namePath = (
         Array.isArray(unprefixedName) ? unprefixedName : [unprefixedName]
@@ -37,11 +44,17 @@ export function createFormItem<TParsedValues>(
         (segment, index) => segment === namePath[index],
       );
       if (hasPrefix) {
-        name = namePath.slice(
-          formListPrefix.length,
-        ) as FormItemProps<TParsedValues>["name"];
+        name = namePath.slice(formListPrefix.length) as NamePath<TParsedValues>;
       }
     }
+
+    const resolvedName = (
+      options.mode === "inherit"
+        ? Array.isArray(formItemPrefix)
+          ? [...formItemPrefix, ...(Array.isArray(name) ? name : [name])]
+          : name
+        : name
+    ) as NamePath<TParsedValues>;
 
     const defaultNormalize: FormItemProps<TParsedValues>["normalize"] = (
       value,
@@ -60,12 +73,14 @@ export function createFormItem<TParsedValues>(
 
     if (!validator || !name) {
       return (
-        <Form.Item
-          name={name}
-          rules={rules}
-          normalize={defaultNormalize}
-          {...rest}
-        />
+        <FormItemContext.Provider value={{ name }}>
+          <Form.Item
+            name={resolvedName}
+            rules={rules}
+            normalize={defaultNormalize}
+            {...rest}
+          />
+        </FormItemContext.Provider>
       );
     }
 
@@ -84,13 +99,15 @@ export function createFormItem<TParsedValues>(
     });
 
     return (
-      <Form.Item
-        name={name}
-        rules={mergedRules}
-        required={required}
-        normalize={defaultNormalize}
-        {...rest}
-      />
+      <FormItemContext.Provider value={{ name: resolvedName }}>
+        <Form.Item
+          name={resolvedName}
+          rules={mergedRules}
+          required={required}
+          normalize={defaultNormalize}
+          {...rest}
+        />
+      </FormItemContext.Provider>
     );
   };
 

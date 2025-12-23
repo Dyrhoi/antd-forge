@@ -8,7 +8,7 @@ import {
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import z from "zod";
 import { useForm } from "../src";
-import { Form, Input, InputNumber } from "antd";
+import { Input, InputNumber } from "antd";
 
 describe("useForm", () => {
   describe("useForm-schema-driven", () => {
@@ -38,13 +38,13 @@ describe("useForm", () => {
     it("renders Form.Items and submits via DOM, calling onFinish with parsed values", async () => {
       const onFinish = vi.fn();
       function Comp() {
-        const { formProps, FormItem } = useForm({
+        const { Form, FormItem } = useForm({
           validator: schema,
           onFinish,
         });
 
         return (
-          <Form {...formProps}>
+          <Form>
             <FormItem name={["name"]}>
               <Input />
             </FormItem>
@@ -81,9 +81,9 @@ describe("useForm", () => {
       );
 
       function Comp() {
-        const { formProps, FormItem } = result.current;
+        const { Form, FormItem } = result.current;
         return (
-          <Form {...formProps}>
+          <Form>
             <FormItem name={["name"]}>
               <Input />
             </FormItem>
@@ -135,14 +135,14 @@ describe("useForm", () => {
       const onFinish = vi.fn();
 
       function Comp() {
-        const { formProps, FormItem } = useForm({
+        const { Form, FormItem } = useForm({
           validator: schema,
           onFinish,
           autoSubmit: "off",
         });
 
         return (
-          <Form {...formProps}>
+          <Form>
             <FormItem name={["search"]}>
               <Input data-testid="search-input" />
             </FormItem>
@@ -169,14 +169,14 @@ describe("useForm", () => {
       const onFinish = vi.fn();
 
       function Comp() {
-        const { formProps, FormItem } = useForm({
+        const { Form, FormItem } = useForm({
           validator: schema,
           onFinish,
           autoSubmit: "auto",
         });
 
         return (
-          <Form {...formProps}>
+          <Form>
             <FormItem name={["search"]}>
               <Input data-testid="search-input" />
             </FormItem>
@@ -208,14 +208,14 @@ describe("useForm", () => {
       const onFinish = vi.fn();
 
       function Comp() {
-        const { formProps, FormItem } = useForm({
+        const { Form, FormItem } = useForm({
           validator: schema,
           onFinish,
           autoSubmit: { mode: "auto", debounce: 500 },
         });
 
         return (
-          <Form {...formProps}>
+          <Form>
             <FormItem name={["search"]}>
               <Input data-testid="search-input" />
             </FormItem>
@@ -260,14 +260,14 @@ describe("useForm", () => {
       const onFinish = vi.fn();
 
       function Comp() {
-        const { formProps, FormItem } = useForm({
+        const { Form, FormItem } = useForm({
           validator: schema,
           onFinish,
           autoSubmit: "auto",
         });
 
         return (
-          <Form {...formProps}>
+          <Form>
             <FormItem name={["search"]}>
               <Input data-testid="search-input" />
             </FormItem>
@@ -292,14 +292,14 @@ describe("useForm", () => {
       const onFinish = vi.fn();
 
       function Comp() {
-        const { formProps, FormItem } = useForm({
+        const { Form, FormItem } = useForm({
           validator: schema,
           onFinish,
           autoSubmit: "auto",
         });
 
         return (
-          <Form {...formProps}>
+          <Form>
             <FormItem name={["search"]}>
               <Input data-testid="search-input" />
             </FormItem>
@@ -349,14 +349,14 @@ describe("useForm", () => {
       const onFinish = vi.fn();
 
       function Comp() {
-        const { formProps, FormItem, form } = useForm({
+        const { Form, FormItem } = useForm({
           validator: strictSchema,
           onFinish,
           autoSubmit: "auto",
         });
 
         return (
-          <Form {...formProps} form={form}>
+          <Form>
             <FormItem name={["search"]}>
               <Input data-testid="search-input" />
             </FormItem>

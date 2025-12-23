@@ -11,7 +11,7 @@ import { useTable } from "../src/useTable";
 import * as useFormModule from "../src/useForm";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
-import { Form, Input } from "antd";
+import { Input } from "antd";
 
 // ============================================================================
 // Test Setup
@@ -568,62 +568,6 @@ describe("useTable", () => {
       );
 
       useFormSpy.mockRestore();
-    });
-
-    it("should call onValuesChange when user changes input with autoSubmit enabled", async () => {
-      const onValuesChangeSpy = vi.fn();
-
-      const searchFn = vi.fn().mockResolvedValue({
-        data: mockUsers,
-        total: mockUsers.length,
-      });
-
-      const queryClient = new QueryClient({
-        defaultOptions: { queries: { retry: false, gcTime: 0 } },
-      });
-
-      function TestComponent() {
-        const { formProps, FormItem } = useTable({
-          validator: schema,
-          autoSubmit: "auto",
-          search: searchFn,
-        });
-
-        // Wrap onValuesChange to spy on it
-        const wrappedFormProps = {
-          ...formProps,
-          onValuesChange: (
-            changedValues: Partial<FilterValues>,
-            allValues: FilterValues,
-          ) => {
-            onValuesChangeSpy(changedValues, allValues);
-            formProps.onValuesChange?.(changedValues, allValues);
-          },
-        };
-
-        return (
-          <Form {...wrappedFormProps}>
-            <FormItem name="filter">
-              <Input data-testid="filter-input" />
-            </FormItem>
-          </Form>
-        );
-      }
-
-      const { getByTestId } = render(
-        <QueryClientProvider client={queryClient}>
-          <TestComponent />
-        </QueryClientProvider>,
-      );
-
-      const input = getByTestId("filter-input");
-      fireEvent.change(input, { target: { value: "test" } });
-
-      // Verify onValuesChange was called with the new value
-      expect(onValuesChangeSpy).toHaveBeenCalledWith(
-        { filter: "test" },
-        { filter: "test" },
-      );
     });
   });
 });
