@@ -6,6 +6,7 @@ import { createFormItem, TypedFormItemComponent } from "./FormItem";
 import { createFormList, TypedFormListComponent } from "./FormList";
 import { FieldData } from "./internal/antd-types";
 import { FormProvider } from "./internal/FormProvider";
+import { normalizePath } from "./internal/path-segments";
 import { standardValidate } from "./internal/standardSchemaValidator";
 import { useDebounceCallback } from "./internal/useDebounceCallback";
 import { warning } from "./internal/warning";
@@ -267,13 +268,7 @@ export function useForm<
     [validator, requiredFields],
   );
 
-  const FormList = useMemo(
-    () =>
-      createFormList<TResolvedValues>({
-        validator,
-      }),
-    [validator],
-  );
+  const FormList = useMemo(() => createFormList<TResolvedValues>(), []);
 
   const useWatch = useMemo(() => {
     return createUseWatch({ form: formAnt });
@@ -319,9 +314,7 @@ function mapIssuesToFormErrors(
 ): FieldData[] {
   return issues.map((issue) => {
     return {
-      name: issue.path?.map((segment) =>
-        typeof segment === "object" && "key" in segment ? segment.key : segment,
-      ),
+      name: normalizePath(issue.path),
       errors: [issue.message],
     };
   });

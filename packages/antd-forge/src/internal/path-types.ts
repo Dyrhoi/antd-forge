@@ -57,16 +57,23 @@ export type GetArrayItemType<T, TName> =
 /**
  * Build all valid paths for navigating within a type.
  * Used to generate autocomplete options for nested object properties.
+ * Supports array traversal with `number` type for indices.
  * @example
  * type User = { email: string; profile: { firstName: string } };
  * type Paths = InnerPaths<User>; // ["email"] | ["profile"] | ["profile", "firstName"]
+ * 
+ * type Form = { users: { name: string }[] };
+ * type FormPaths = InnerPaths<Form>; // ["users"] | ["users", number] | ["users", number, "name"]
  */
 export type InnerPaths<
   T,
   Prefix extends SimplePathSegment[] = [],
 > = T extends object
-  ? T extends readonly unknown[]
-    ? never // Don't recurse into nested arrays for now
+  ? T extends readonly (infer Item)[]
+    ? // For arrays: allow path to array itself, path to item (with number index), or traverse into items
+      | [...Prefix]
+      | [...Prefix, number]
+      | InnerPaths<Item, [...Prefix, number]>
     : {
         [K in keyof T & (string | number)]:
           | [...Prefix, K]

@@ -1,5 +1,6 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
-import { SimplePathSegment } from "./path-types";
+import { arePathsEqual, normalizePath } from "./path-segments";
+import type { SimplePathSegment } from "./path-types";
 import { FormRule } from "antd";
 
 type ValidationResult<T> =
@@ -44,13 +45,8 @@ export function createSchemaRule<TSchema extends StandardSchemaV1>(
 
       const matchingIssue = result.issues.find((issue) => {
         if (!issue.path) return false;
-        const issuePath = issue.path.map((segment) =>
-          typeof segment === "object" && "key" in segment
-            ? segment.key
-            : segment,
-        );
-        if (issuePath.length !== fieldPath.length) return false;
-        return issuePath.every((key, index) => key === fieldPath[index]);
+        const issuePath = normalizePath(issue.path);
+        return arePathsEqual(issuePath, fieldPath);
       });
 
       if (!matchingIssue) {

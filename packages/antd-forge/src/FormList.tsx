@@ -1,115 +1,163 @@
-import { StandardSchemaV1 } from "@standard-schema/spec";
-import { Form, FormItemProps, FormListFieldData } from "antd";
-import { createContext, ReactNode, useContext } from "react";
+import { Form, FormListFieldData, FormListOperation } from "antd";
+import { ReactNode, useState, useEffect } from "react";
 import { FormListProps } from "./internal/antd-types";
+import { normalizeNamePath } from "./internal/path-segments";
 import {
   GetArrayItemType,
   InnerPaths,
-  NormalizeNamePath,
   SimplePathSegment,
 } from "./internal/path-types";
-import { createSchemaRule } from "./internal/standardSchemaValidator";
-
-type FormListFieldName<TName> = [...NormalizeNamePath<TName>, number];
 
 /**
- * Type-safe getName function for FormList fields.
- * Takes a relative path within the array item and returns the full form path.
- * @internal
+ * Field data for each item in the FormList.
+ * - `key` is a stable React key
+ * - `name` is the array index (use to construct full paths in FormItem)
  */
-type GetNameFn<TParsedValues, TName> = <
-  TRelativePath extends InnerPaths<GetArrayItemType<TParsedValues, TName>>,
->(
-  relativePath: TRelativePath,
-) => [...FormListFieldName<TName>, ...TRelativePath];
+export type TypedFormListFieldData = FormListFieldData;
 
-export type TypedFormListFieldData<TParsedValues, TName> = Omit<
-  FormListFieldData,
-  "name"
-> & {
-  name: number;
-  getName: GetNameFn<TParsedValues, TName>;
+/**
+ * Meta information about the FormList.
+ */
+export type FormListMeta = {
+  errors: ReactNode[];
 };
 
 export type TypedFormListProps<
   TParsedValues,
-  TName extends FormItemProps<TParsedValues>["name"] =
-    FormItemProps<TParsedValues>["name"],
-> = Omit<FormListProps, "name" | "children"> & {
+  TName extends InnerPaths<TParsedValues> = InnerPaths<TParsedValues>,
+> = Omit<FormListProps, "name" | "children" | "initialValue"> & {
+  /** The name path to the array field */
   name: TName;
+  /** Initial value for the array */
+  initialValue?: GetArrayItemType<TParsedValues, TName>[];
+  /** Render function for the list items */
   children: (
-    fields: Array<TypedFormListFieldData<TParsedValues, TName>>,
-    operation: Parameters<FormListProps["children"]>[1],
-    meta: Parameters<FormListProps["children"]>[2],
+    fields: TypedFormListFieldData[],
+    operation: FormListOperation,
+    meta: FormListMeta,
   ) => ReactNode;
 };
 
-type FormListContextValue = {
-  prefix: SimplePathSegment[];
-} | null;
-
-export const FormListContext = createContext<FormListContextValue>(null);
-
-export const useFormListContext = () => useContext(FormListContext);
-
 export type TypedFormListComponent<TParsedValues> = <
-  TName extends FormItemProps<TParsedValues>["name"],
+  TName extends InnerPaths<TParsedValues>,
 >(
   props: TypedFormListProps<TParsedValues, TName>,
 ) => ReactNode;
 
-type CreateFormItemOptions = {
-  validator?: StandardSchemaV1;
+type CreateFormListOptions = {
+  /**
+   * When provided, this prefix is prepended to the FormList name.
+   * Used by useFormInstance({ inherit: true }) for composable sub-components.
+   */
+  prefix?: SimplePathSegment[];
 };
 
 /**
- * Creates a typed FormList component bound to the form's parsed values type.
+ * Creates a typed FormList component that wraps antd's Form.List.
+ *
+ * This uses a "shadow" Form.List pattern:
+ * - Form.List is rendered to get the operations (add, remove, move) and field tracking
+ * - Children are rendered OUTSIDE the Form.List to avoid antd's automatic name prefixing
+ * - FormItem uses full paths like ["users", index, "email"]
+ *
+ * @example
+ * ```tsx
+ * <FormList name={["users"]} initialValue={[{ email: "" }]}>
+ *   {(fields, { add, remove }) => (
+ *     <>
+ *       {fields.map(({ key, name: index }) => (
+ *         <div key={key}>
+ *           <FormItem name={["users", index, "email"]}>
+ *             <Input />
+ *           </FormItem>
+ *           <Button onClick={() => remove(index)}>Remove</Button>
+ *         </div>
+ *       ))}
+ *       <Button onClick={() => add()}>Add</Button>
+ *     </>
+ *   )}
+ * </FormList>
+ * ```
  */
 export function createFormList<TParsedValues>(
-  options: CreateFormItemOptions = {},
+  options: CreateFormListOptions = {},
 ): TypedFormListComponent<TParsedValues> {
-  const { validator } = options;
+  const { prefix } = options;
 
-  const FormList: TypedFormListComponent<TParsedValues> = ({
+  const TypedFormList: TypedFormListComponent<TParsedValues> = ({
     name,
     children,
-    rules,
+    initialValue,
     ...rest
   }) => {
-    const prefixPath = (
-      Array.isArray(name) ? name : [name]
-    ) as SimplePathSegment[];
+    // Convert name to array path
+    const rawNamePath = normalizeNamePath(name);
 
-    const schemaRule = validator
-      ? createSchemaRule(validator, { fieldPath: prefixPath })
-      : undefined;
-    const mergedRules = [schemaRule, ...(rules ?? [])].filter(
-      (rule): rule is NonNullable<FormListProps["rules"]>[number] =>
-        rule !== undefined,
-    );
+    // Prepend prefix if in inherit mode
+    const namePath = prefix ? [...prefix, ...rawNamePath] : rawNamePath;
+
+    // State to capture Form.List's fields, operation, and meta
+    const [listState, setListState] = useState<{
+      fields: TypedFormListFieldData[];
+      operation: FormListOperation;
+      meta: FormListMeta;
+    }>({
+      fields: [],
+      operation: {
+        add: () => {},
+        remove: () => {},
+        move: () => {},
+      },
+      meta: { errors: [] },
+    });
 
     return (
-      <FormListContext.Provider value={{ prefix: prefixPath }}>
-        <Form.List name={prefixPath} rules={mergedRules} {...rest}>
-          {(fields, operation, meta) =>
-            children(
-              fields.map(({ name: fieldIndex, ...restField }) => ({
-                ...restField,
-                name: fieldIndex,
-                getName: (relativePath: SimplePathSegment[]) => [
-                  ...prefixPath,
-                  fieldIndex,
-                  ...relativePath,
-                ],
-              })) as Parameters<typeof children>[0],
-              operation,
-              meta,
-            )
-          }
+      <>
+        {/* Shadow Form.List - just captures operations and fields, renders nothing visible */}
+        <Form.List name={namePath} initialValue={initialValue} {...rest}>
+          {(fields, operation, meta) => {
+            // Update state when Form.List re-renders
+            // We need to do this in a layout effect to avoid render loops
+            return (
+              <ShadowCapture
+                fields={fields}
+                operation={operation}
+                meta={meta}
+                onCapture={setListState}
+              />
+            );
+          }}
         </Form.List>
-      </FormListContext.Provider>
+        {/* Render children outside Form.List's context - no name prefix applied */}
+        {children(listState.fields, listState.operation, listState.meta)}
+      </>
     );
   };
 
-  return FormList;
+  return TypedFormList;
+}
+
+/**
+ * Helper component to capture Form.List state without causing render loops
+ */
+function ShadowCapture({
+  fields,
+  operation,
+  meta,
+  onCapture,
+}: {
+  fields: TypedFormListFieldData[];
+  operation: FormListOperation;
+  meta: FormListMeta;
+  onCapture: (state: {
+    fields: TypedFormListFieldData[];
+    operation: FormListOperation;
+    meta: FormListMeta;
+  }) => void;
+}) {
+  useEffect(() => {
+    onCapture({ fields, operation, meta });
+  }, [fields, operation, meta, onCapture]);
+
+  return null; // Render nothing
 }

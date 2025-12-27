@@ -64,7 +64,7 @@ describe("useForm", () => {
     });
   });
 
-  describe("FormList getName", () => {
+  describe("FormList field data", () => {
     const schema = z.object({
       users: z.array(
         z.object({
@@ -77,33 +77,7 @@ describe("useForm", () => {
       ),
     });
 
-    it("getName should return full path with correct types", () => {
-      const { FormList } = useForm({ validator: schema });
-
-      FormList({
-        name: "users",
-        children: (fields) => {
-          const field = fields[0];
-          if (!field) return null;
-
-          // getName should accept valid relative paths
-          const emailPath = field.getName(["email"]);
-          expectTypeOf(emailPath).toEqualTypeOf<["users", number, "email"]>();
-
-          const firstNamePath = field.getName(["profile", "firstName"]);
-          expectTypeOf(firstNamePath).toEqualTypeOf<
-            ["users", number, "profile", "firstName"]
-          >();
-
-          // name should be deprecated number (the field index)
-          expectTypeOf(field.name).toEqualTypeOf<number>();
-
-          return null;
-        },
-      });
-    });
-
-    it("getName should work with array name syntax", () => {
+    it("should provide key and name (index) for full path construction", () => {
       const { FormList } = useForm({ validator: schema });
 
       FormList({
@@ -112,10 +86,29 @@ describe("useForm", () => {
           const field = fields[0];
           if (!field) return null;
 
-          const lastNamePath = field.getName(["profile", "lastName"]);
-          expectTypeOf(lastNamePath).toEqualTypeOf<
-            ["users", number, "profile", "lastName"]
-          >();
+          // name is the array index (number) - use for full path construction
+          expectTypeOf(field.name).toEqualTypeOf<number>();
+
+          // key is a stable React key (number)
+          expectTypeOf(field.key).toEqualTypeOf<number>();
+
+          return null;
+        },
+      });
+    });
+
+    it("FormList should accept array name syntax", () => {
+      const { FormList } = useForm({ validator: schema });
+
+      FormList({
+        name: ["users"],
+        children: (fields) => {
+          const field = fields[0];
+          if (!field) return null;
+
+          // key and name should be numbers
+          expectTypeOf(field.key).toBeNumber();
+          expectTypeOf(field.name).toBeNumber();
 
           return null;
         },
