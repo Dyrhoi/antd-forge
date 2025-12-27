@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "antd-forge";
-import { Form, Input, Card, Typography } from "antd";
+import { Input, Card, Typography } from "antd";
 import z from "zod";
 import { useState } from "react";
 
@@ -15,7 +15,7 @@ export default function UseFormAutoSubmitExample() {
   > | null>(null);
   const [submitCount, setSubmitCount] = useState(0);
 
-  const { formProps, FormItem } = useForm({
+  const { Form, FormItem } = useForm({
     validator: schema,
     autoSubmit: "auto", // or { mode: "auto", debounce: 500 }
     onFinish: (values) => {
@@ -26,7 +26,7 @@ export default function UseFormAutoSubmitExample() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <Form {...formProps} layout="vertical">
+      <Form layout="vertical">
         <FormItem name={["search"]} label="Search (auto-submits as you type)">
           <Input placeholder="Start typing..." />
         </FormItem>

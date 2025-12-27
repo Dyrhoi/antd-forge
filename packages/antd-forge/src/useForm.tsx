@@ -5,12 +5,12 @@ import { useForm as useFormSF } from "sunflower-antd";
 import { createFormItem, TypedFormItemComponent } from "./FormItem";
 import { createFormList, TypedFormListComponent } from "./FormList";
 import { FieldData } from "./internal/antd-types";
-import { FormProvider } from "./internal/FormProvider";
 import { normalizePath } from "./internal/path-segments";
 import { standardValidate } from "./internal/standardSchemaValidator";
 import { useDebounceCallback } from "./internal/useDebounceCallback";
 import { warning } from "./internal/warning";
 import { createUseWatch, UseWatch } from "./useWatch";
+import { useStableForm } from "./Form";
 
 // ============================================================================
 // Type Helpers
@@ -83,7 +83,7 @@ export interface UseFormReturn<TParsedValues = unknown> {
    */
   formProps: FormProps<TParsedValues>;
 
-  Form: (props: { children: ReactNode }) => ReactNode;
+  Form: (props: FormProps<TParsedValues>) => ReactNode;
 
   /**
    * A typed `Form.Item` component bound to the form's value type.
@@ -283,17 +283,12 @@ export function useForm<
     }),
   };
 
-  const Form = ({ children }: { children: React.ReactNode }) => {
-    return (
-      <FormProvider
-        formInstance={formAnt}
-        validator={validator}
-        requiredFields={requiredFields}
-      >
-        <AntdForm {...formProps}>{children}</AntdForm>
-      </FormProvider>
-    );
-  };
+  const Form = useStableForm<TResolvedValues>({
+    form: formAnt,
+    validator,
+    requiredFields,
+    internalFormProps: formProps,
+  });
 
   return {
     form: formAnt,

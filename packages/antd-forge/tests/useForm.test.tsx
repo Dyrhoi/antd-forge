@@ -9,6 +9,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import z from "zod";
 import { useForm } from "../src";
 import { Input, InputNumber } from "antd";
+import { useState } from "react";
 
 describe("useForm", () => {
   describe("useForm-schema-driven", () => {
@@ -390,6 +391,144 @@ describe("useForm", () => {
 
       expect(onFinish).toHaveBeenCalledTimes(1);
       expect(onFinish).toHaveBeenCalledWith({ search: "valid search" });
+    });
+  });
+
+  describe("useForm-focus-retention", () => {
+    const schema = z.object({ search: z.string().optional() });
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("maintains focus on input when parent re-renders after submit", async () => {
+      const onFinish = vi.fn();
+
+      function Comp() {
+        const [submitCount, setSubmitCount] = useState(0);
+        const { Form, FormItem } = useForm({
+          validator: schema,
+          onFinish: (values) => {
+            onFinish(values);
+            setSubmitCount((c) => c + 1);
+          },
+          autoSubmit: "auto",
+        });
+
+        return (
+          <div>
+            <span data-testid="submit-count">{submitCount}</span>
+            <Form>
+              <FormItem name={["search"]}>
+                <Input data-testid="search-input" />
+              </FormItem>
+            </Form>
+          </div>
+        );
+      }
+
+      const { getByTestId } = render(<Comp />);
+      const input = getByTestId("search-input");
+
+      // Focus the input
+      await act(async () => {
+        input.focus();
+      });
+      expect(document.activeElement).toBe(input);
+
+      // Type something - this triggers auto-submit which causes parent state change
+      await act(async () => {
+        fireEvent.change(input, { target: { value: "test" } });
+      });
+
+      // Leading edge fires immediately, causing state update
+      expect(onFinish).toHaveBeenCalledTimes(1);
+      expect(getByTestId("submit-count").textContent).toBe("1");
+
+      // Wait for any async React updates to settle
+      await act(async () => {
+        vi.advanceTimersByTime(350);
+      });
+
+      // Focus should still be on the input after the re-render
+      expect(document.activeElement).toBe(input);
+    });
+
+    it("maintains focus during rapid typing with debounced auto-submit", async () => {
+      const onFinish = vi.fn();
+
+      function Comp() {
+        const [lastValue, setLastValue] = useState("");
+        const { Form, FormItem } = useForm({
+          validator: schema,
+          onFinish: (values) => {
+            onFinish(values);
+            setLastValue(values.search ?? "");
+          },
+          autoSubmit: { mode: "auto", debounce: 300 },
+        });
+
+        return (
+          <div>
+            <span data-testid="last-value">{lastValue}</span>
+            <Form>
+              <FormItem name={["search"]}>
+                <Input data-testid="search-input" />
+              </FormItem>
+            </Form>
+          </div>
+        );
+      }
+
+      const { getByTestId } = render(<Comp />);
+      const input = getByTestId("search-input");
+
+      // Focus the input
+      await act(async () => {
+        input.focus();
+      });
+      expect(document.activeElement).toBe(input);
+
+      // Simulate typing character by character
+      await act(async () => {
+        fireEvent.change(input, { target: { value: "t" } });
+      });
+      expect(document.activeElement).toBe(input);
+
+      // Leading edge fires, state updates
+      expect(onFinish).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+        fireEvent.change(input, { target: { value: "te" } });
+      });
+      expect(document.activeElement).toBe(input);
+
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+        fireEvent.change(input, { target: { value: "tes" } });
+      });
+      expect(document.activeElement).toBe(input);
+
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+        fireEvent.change(input, { target: { value: "test" } });
+      });
+      expect(document.activeElement).toBe(input);
+
+      // Let debounce complete - trailing edge fires
+      await act(async () => {
+        vi.advanceTimersByTime(350);
+      });
+
+      // Focus should still be on the input
+      expect(document.activeElement).toBe(input);
+      // Should have called onFinish for trailing edge with new value
+      expect(onFinish).toHaveBeenLastCalledWith({ search: "test" });
     });
   });
 });

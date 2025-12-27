@@ -6,7 +6,7 @@ import { Button, Checkbox, Flex, Form, Input } from "antd";
 import z from "zod";
 
 export default function UseFormExample() {
-  const { formProps, FormItem, FormList } = useForm({
+  const { Form, FormItem, FormList } = useForm({
     validator: z.object({
       username: z.string().min(3, "Username must be at least 3 characters"),
       emails: z
@@ -30,7 +30,7 @@ export default function UseFormExample() {
   });
 
   return (
-    <Form {...formProps} layout="vertical">
+    <Form layout="vertical">
       <FormItem name="username" label="Username">
         <Input />
       </FormItem>
@@ -68,7 +68,7 @@ export default function UseFormExample() {
                   </Flex>
                 );
               })}
-              <Form.Item>
+              <FormItem>
                 <Button
                   type="dashed"
                   block
@@ -77,7 +77,7 @@ export default function UseFormExample() {
                 >
                   Add Email
                 </Button>
-              </Form.Item>
+              </FormItem>
             </>
           )}
         </FormList>

@@ -2,11 +2,13 @@ import { StandardSchemaV1 } from "@standard-schema/spec";
 import { FormInstance } from "antd";
 import { createContext } from "react";
 
-export const FormContext = createContext<{
-  form: FormInstance;
+export type FormContextValue<T> = {
+  form: FormInstance<T>;
   validator?: StandardSchemaV1 | undefined;
   requiredFields?: Array<StandardSchemaV1.Issue["path"]>;
-} | null>(null);
+};
+
+export const FormContext = createContext<FormContextValue<any> | null>(null);
 
 export function FormProvider<
   TSchema extends StandardSchemaV1 | undefined,

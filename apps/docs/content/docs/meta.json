@@ -3,6 +3,8 @@
     "---Getting Started---",
     "index",
     "installation",
+    "---Guides---",
+    "guides/form-composition",
     "---Hooks---",
     "...hooks"
   ]
