@@ -98,6 +98,7 @@ export type NamePathValue<T, P extends readonly (string | number | symbol)[]> =
     ? K extends keyof T
       ? Rest extends []
         ? T[K]
-        : NamePathValue<T[K], Extract<Rest, any[]>>
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for TypeScript type inference
+          NamePathValue<T[K], Extract<Rest, any[]>>
       : never
     : T;

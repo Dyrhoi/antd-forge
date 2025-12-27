@@ -74,13 +74,12 @@ export type TableQueryOptionsFn<
   TData = unknown,
   TError = Error,
   TPaginationMode extends PaginationMode = "server",
-> = (
-  props: SearchProps<TFormValues, TPaginationMode>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-) => UseQueryOptions<
+> = (props: SearchProps<TFormValues, TPaginationMode>) => UseQueryOptions<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TanStack Query's UseQueryOptions uses any for TQueryFnData
   any,
   TError,
   ResolveSearchResult<TData, TPaginationMode>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TanStack Query's UseQueryOptions uses any for TQueryKey
   any
 >;
 

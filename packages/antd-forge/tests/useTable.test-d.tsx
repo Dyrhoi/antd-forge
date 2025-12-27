@@ -48,7 +48,7 @@ describe("useTable", () => {
       it("should infer return type correctly", () => {
         const { query } = useTable({
           validator: schema,
-          search: (props) => ({
+          search: () => ({
             data: [{ id: 1, name: "User 1" }] as User[],
             total: 1,
           }),

@@ -1,17 +1,10 @@
-import {
-  renderHook,
-  waitFor,
-  act,
-  render,
-  fireEvent,
-} from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { z } from "zod";
-import { useTable } from "../src/useTable";
-import * as useFormModule from "../src/useForm";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import React from "react";
-import { Input } from "antd";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
+import * as useFormModule from "../src/useForm";
+import { useTable } from "../src/useTable";
 
 // ============================================================================
 // Test Setup
@@ -348,9 +341,11 @@ describe("useTable", () => {
 
         // Simulate page change via table (keep same pageSize so current does not reset)
         act(() => {
-          result.current.tableProps.pagination &&
+          void (
+            result.current.tableProps.pagination &&
             typeof result.current.tableProps.pagination === "object" &&
-            result.current.tableProps.pagination.onChange?.(3, 10);
+            result.current.tableProps.pagination.onChange?.(3, 10)
+          );
         });
 
         await waitFor(() => {
@@ -379,9 +374,11 @@ describe("useTable", () => {
 
         // Move to page 3
         act(() => {
-          result.current.tableProps.pagination &&
+          void (
+            result.current.tableProps.pagination &&
             typeof result.current.tableProps.pagination === "object" &&
-            result.current.tableProps.pagination.onChange?.(3, 10);
+            result.current.tableProps.pagination.onChange?.(3, 10)
+          );
         });
         await waitFor(() => expect(result.current.pagination.current).toBe(3));
 
@@ -452,9 +449,11 @@ describe("useTable", () => {
 
       // Simulate page change via table
       act(() => {
-        result.current.tableProps.pagination &&
+        void (
+          result.current.tableProps.pagination &&
           typeof result.current.tableProps.pagination === "object" &&
-          result.current.tableProps.pagination.onChange?.(3, 10);
+          result.current.tableProps.pagination.onChange?.(3, 10)
+        );
       });
 
       await waitFor(() => expect(result.current.pagination.current).toBe(3));
@@ -483,9 +482,11 @@ describe("useTable", () => {
 
       // Change pageSize
       act(() => {
-        result.current.tableProps.pagination &&
+        void (
+          result.current.tableProps.pagination &&
           typeof result.current.tableProps.pagination === "object" &&
-          result.current.tableProps.pagination.onChange?.(5, 20);
+          result.current.tableProps.pagination.onChange?.(5, 20)
+        );
       });
 
       await waitFor(() => expect(result.current.pagination.pageSize).toBe(20));
@@ -504,9 +505,11 @@ describe("useTable", () => {
 
       // Navigate to page 3
       act(() => {
-        result.current.tableProps.pagination &&
+        void (
+          result.current.tableProps.pagination &&
           typeof result.current.tableProps.pagination === "object" &&
-          result.current.tableProps.pagination.onChange?.(3, 10);
+          result.current.tableProps.pagination.onChange?.(3, 10)
+        );
       });
 
       await waitFor(() => expect(result.current.pagination.current).toBe(3));

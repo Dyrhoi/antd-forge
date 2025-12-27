@@ -36,7 +36,7 @@ describe("useWatch", () => {
   });
 
   describe("return type", () => {
-    const createForm = () =>
+    const useTestForm = () =>
       useForm<{
         user: {
           name: string;
@@ -46,7 +46,7 @@ describe("useWatch", () => {
       }>();
 
     it("should infer scalar property types", () => {
-      const { useWatch } = createForm();
+      const { useWatch } = useTestForm();
 
       const name = useWatch(["user", "name"]);
       expectTypeOf(name).toEqualTypeOf<string | undefined>();
@@ -56,7 +56,7 @@ describe("useWatch", () => {
     });
 
     it("should infer array property types", () => {
-      const { useWatch } = createForm();
+      const { useWatch } = useTestForm();
 
       const emails = useWatch(["user", "emails"]);
       expectTypeOf(emails).toEqualTypeOf<
@@ -65,7 +65,7 @@ describe("useWatch", () => {
     });
 
     it("should infer array element types", () => {
-      const { useWatch } = createForm();
+      const { useWatch } = useTestForm();
 
       const email = useWatch(["user", "emails", 0]);
       expectTypeOf(email).toEqualTypeOf<
@@ -74,7 +74,7 @@ describe("useWatch", () => {
     });
 
     it("should infer nested object types", () => {
-      const { useWatch } = createForm();
+      const { useWatch } = useTestForm();
 
       const user = useWatch(["user"]);
       expectTypeOf(user).toEqualTypeOf<

@@ -1,5 +1,5 @@
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
-import { Checkbox, Input, InputNumber } from "antd";
+import { Input, InputNumber } from "antd";
 import { describe, expect, it, vi } from "vitest";
 import z from "zod";
 import { useForm } from "../src";
