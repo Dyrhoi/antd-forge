@@ -55,17 +55,17 @@ export type GetArrayItemType<T, TName> =
     : never;
 
 /**
- * Build all valid paths for navigating within a type.
+ * Build all valid paths for navigating within a type (tuple form only).
  * Used to generate autocomplete options for nested object properties.
  * Supports array traversal with `number` type for indices.
  * @example
  * type User = { email: string; profile: { firstName: string } };
- * type Paths = InnerPaths<User>; // ["email"] | ["profile"] | ["profile", "firstName"]
+ * type Paths = InnerPathsTuple<User>; // ["email"] | ["profile"] | ["profile", "firstName"]
  * 
  * type Form = { users: { name: string }[] };
- * type FormPaths = InnerPaths<Form>; // ["users"] | ["users", number] | ["users", number, "name"]
+ * type FormPaths = InnerPathsTuple<Form>; // ["users"] | ["users", number] | ["users", number, "name"]
  */
-export type InnerPaths<
+export type InnerPathsTuple<
   T,
   Prefix extends SimplePathSegment[] = [],
 > = T extends object
@@ -73,13 +73,36 @@ export type InnerPaths<
     ? // For arrays: allow path to array itself, path to item (with number index), or traverse into items
       | [...Prefix]
       | [...Prefix, number]
-      | InnerPaths<Item, [...Prefix, number]>
+      | InnerPathsTuple<Item, [...Prefix, number]>
     : {
         [K in keyof T & (string | number)]:
           | [...Prefix, K]
-          | InnerPaths<T[K], [...Prefix, K]>;
+          | InnerPathsTuple<T[K], [...Prefix, K]>;
       }[keyof T & (string | number)]
   : never;
+
+/**
+ * Unwrap single-element tuples to their scalar form.
+ * Allows antd-style name paths: "field" | ["field"] | ["nested", "field"]
+ * @example
+ * type Unwrapped = UnwrapSinglePath<["name"]>; // "name"
+ * type Unchanged = UnwrapSinglePath<["profile", "name"]>; // ["profile", "name"]
+ */
+type UnwrapSinglePath<T> = T extends [infer Single extends SimplePathSegment]
+  ? Single | T
+  : T;
+
+/**
+ * Build all valid paths for navigating within a type.
+ * Matches antd behavior by accepting both scalar and array forms for single-segment paths.
+ * @example
+ * type User = { email: string; profile: { firstName: string } };
+ * type Paths = InnerPaths<User>; // "email" | ["email"] | "profile" | ["profile"] | ["profile", "firstName"]
+ * 
+ * type Form = { users: { name: string }[] };
+ * type FormPaths = InnerPaths<Form>; // "users" | ["users"] | ["users", number] | ["users", number, "name"]
+ */
+export type InnerPaths<T> = UnwrapSinglePath<InnerPathsTuple<T>>;
 
   
 /**

@@ -2,7 +2,7 @@
 
 import { MinusCircleOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useForm } from "antd-forge";
-import { Button, Card, Checkbox, Flex, Form, Input, Space } from "antd";
+import { Button, Checkbox, Flex, Form, Input } from "antd";
 import z from "zod";
 
 export default function UseFormExample() {
@@ -12,7 +12,7 @@ export default function UseFormExample() {
       emails: z
         .array(
           z.object({
-            email: z.email("Invalid email address"),
+            email: z.string().email("Invalid email address"),
             updates: z.object({
               security: z.boolean(),
               newsletter: z.boolean(),
@@ -31,33 +31,31 @@ export default function UseFormExample() {
 
   return (
     <Form {...formProps} layout="vertical">
-      <FormItem name={["username"]} label="Username">
+      <FormItem name="username" label="Username">
         <Input />
       </FormItem>
-      <FormItem label="Emails" name={"emails"}>
-        <FormList name={"emails"} initialValue={[{}]}>
+      <FormItem label="Emails" name="emails">
+        <FormList name="emails" initialValue={[]}>
           {(fields, { add, remove }) => (
             <>
-              {fields.map(({ key, getName, name, ...restField }) => {
+              {fields.map(({ key, name: index }) => {
                 return (
-                  <Flex key={key} align="baseline" gap={"middle"}>
+                  <Flex key={key} align="baseline" gap="middle">
                     <FormItem
                       style={{ flex: 1 }}
-                      key={key}
-                      name={getName(["email"])}
-                      {...restField}
+                      name={["emails", index, "email"]}
                     >
                       <Input placeholder="john_doe@example.com" />
                     </FormItem>
                     <FormItem
-                      name={getName(["updates", "security"])}
+                      name={["emails", index, "updates", "security"]}
                       initialValue={false}
                       valuePropName="checked"
                     >
                       <Checkbox>Receive Security Updates</Checkbox>
                     </FormItem>
                     <FormItem
-                      name={getName(["updates", "newsletter"])}
+                      name={["emails", index, "updates", "newsletter"]}
                       initialValue={false}
                       valuePropName="checked"
                     >
@@ -65,7 +63,7 @@ export default function UseFormExample() {
                     </FormItem>
                     <MinusCircleOutlined
                       style={{ marginLeft: "auto" }}
-                      onClick={() => remove(name)}
+                      onClick={() => remove(index)}
                     />
                   </Flex>
                 );

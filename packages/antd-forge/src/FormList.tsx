@@ -29,7 +29,7 @@ export type TypedFormListProps<
   /** The name path to the array field */
   name: TName;
   /** Initial value for the array */
-  initialValue?: GetArrayItemType<TParsedValues, TName>[];
+  initialValue?: Partial<GetArrayItemType<TParsedValues, TName>>[];
   /** Render function for the list items */
   children: (
     fields: TypedFormListFieldData[],

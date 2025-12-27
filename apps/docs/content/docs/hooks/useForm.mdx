@@ -75,9 +75,9 @@ This gives you the best of both worlds—instant response for discrete controls 
 
 ### Modes
 
-| Mode | Description |
-|------|-------------|
-| `'off'` | (Default) No automatic submission. Form submits only on explicit submit action. |
+| Mode     | Description                                                                           |
+| -------- | ------------------------------------------------------------------------------------- |
+| `'off'`  | (Default) No automatic submission. Form submits only on explicit submit action.       |
 | `'auto'` | Automatically submits when any field value changes using leading + trailing debounce. |
 
 ### Basic Usage
@@ -112,20 +112,20 @@ const { formProps, FormItem } = useForm({
 `useForm` provides a typed `FormList` component for managing dynamic arrays of fields. See the [FormList example](#formlist-1) for a live demo.
 
 ```tsx
-const { formProps, FormList } = useForm({
+const { formProps, FormItem, FormList } = useForm({
   validator: schema,
   onFinish: (values) => console.log(values),
 });
 
 return (
   <Form {...formProps}>
-    <FormList name={["items"]}>
+    <FormList name="items">
       {(fields, { add, remove }, { errors }) => (
         <>
-          {fields.map((field) => (
-            <Form.Item key={field.key} {...field}>
+          {fields.map(({ key, name: index }) => (
+            <FormItem key={key} name={["items", index, "value"]}>
               <Input />
-            </Form.Item>
+            </FormItem>
           ))}
           <Button onClick={() => add()}>Add Item</Button>
         </>
