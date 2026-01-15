@@ -1,0 +1,317 @@
+---
+title: Factory Hooks
+icon: Factory
+description: Create reusable typed hooks with createFormHook.
+sources:
+  Form: https://ant.design/components/form
+---
+
+When multiple components need to work with the same form schema, `createFormHook` generates a set of hooks that share type information. This is useful for large forms split across files or when building a library of form components.
+
+## Why Factory Hooks?
+
+With `useForm`, each component that calls the hook gets its own form instance. This works for single-file forms but breaks down when:
+
+- Multiple components need to read/write the same form
+- You want to enforce a specific schema across related components
+- Sub-components need type-safe access to nested fields
+
+`createFormHook` solves this by creating paired hooks: one to create the form, one to access it from anywhere in the tree.
+
+## Basic Usage
+
+```tsx twoslash
+import React from "react";
+import { z } from "zod";
+import { createFormHook } from "antd-typed";
+import { Input, Button, Form } from "antd";
+
+const userSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  address: z.object({
+    street: z.string(),
+    city: z.string(),
+  }),
+});
+
+// Create typed hooks for this schema
+export const {
+  useCustomForm: useUserForm,
+  useCustomFormInstance: useUserFormInstance,
+} = createFormHook({
+  validator: userSchema,
+});
+```
+
+This creates two hooks:
+
+| Hook                  | Purpose                                            |
+| --------------------- | -------------------------------------------------- |
+| `useUserForm`         | Creates the form, returns `Form`, `FormItem`, etc. |
+| `useUserFormInstance` | Accesses the form from child components            |
+
+## Using the Hooks
+
+The parent component creates the form:
+
+```tsx twoslash
+import React from "react";
+import { z } from "zod";
+import { createFormHook } from "antd-typed";
+import { Input, Button, Form } from "antd";
+
+const userSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  address: z.object({
+    street: z.string(),
+    city: z.string(),
+  }),
+});
+
+export const {
+  useCustomForm: useUserForm,
+  useCustomFormInstance: useUserFormInstance,
+} = createFormHook({
+  validator: userSchema,
+});
+
+function AddressSection() {
+  const { FormItem } = useUserFormInstance({ inheritAt: ["address"] });
+
+  return (
+    <>
+      <FormItem name="street" label="Street">
+        <Input />
+      </FormItem>
+      <FormItem name="city" label="City">
+        <Input />
+      </FormItem>
+    </>
+  );
+}
+// ---cut---
+function UserForm() {
+  const { Form, FormItem } = useUserForm({
+    onFinish: (values) => {
+      // values is fully typed from userSchema
+      console.log(values);
+    },
+  });
+
+  return (
+    <Form layout="vertical">
+      <FormItem name="name" label="Name">
+        <Input />
+      </FormItem>
+      <FormItem name="email" label="Email">
+        <Input />
+      </FormItem>
+      <AddressSection />
+      <Button type="primary" htmlType="submit">
+        Submit
+      </Button>
+    </Form>
+  );
+}
+```
+
+Child components access the form with scoped types:
+
+```tsx twoslash
+import React from "react";
+import { z } from "zod";
+import { createFormHook } from "antd-typed";
+import { Input, Button, Form } from "antd";
+
+const userSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  address: z.object({
+    street: z.string(),
+    city: z.string(),
+  }),
+});
+
+export const {
+  useCustomForm: useUserForm,
+  useCustomFormInstance: useUserFormInstance,
+} = createFormHook({
+  validator: userSchema,
+});
+// ---cut---
+function AddressSection() {
+  // inheritAt scopes types to the address object
+  const { FormItem } = useUserFormInstance({ inheritAt: ["address"] });
+
+  return (
+    <>
+      {/* Only address fields are valid here */}
+      <FormItem name="street" label="Street">
+        <Input />
+      </FormItem>
+      <FormItem name="city" label="City">
+        <Input />
+      </FormItem>
+    </>
+  );
+}
+```
+
+The `inheritAt` option narrows the available field names to just those under `address`. Using an invalid name is a type error:
+
+```tsx twoslash
+// @errors: 2322
+import React from "react";
+import { z } from "zod";
+import { createFormHook } from "antd-typed";
+import { Input } from "antd";
+
+const userSchema = z.object({
+  name: z.string(),
+  address: z.object({ street: z.string(), city: z.string() }),
+});
+
+const { useCustomFormInstance } = createFormHook({ validator: userSchema });
+// ---cut---
+function AddressSection() {
+  const { FormItem } = useCustomFormInstance({ inheritAt: ["address"] });
+  // Only "street" | "city" are valid here
+  return (
+    <>
+      <FormItem name="street">
+        <Input />
+      </FormItem>
+      <FormItem name="name">
+        <Input />
+      </FormItem>
+    </>
+  );
+}
+```
+
+## inheritAt vs inherit
+
+There are two ways to scope child components:
+
+### inheritAt (Explicit)
+
+Specify the exact path. Types are checked at compile time.
+
+```tsx twoslash
+import React from "react";
+import { z } from "zod";
+import { createFormHook } from "antd-typed";
+import { Input } from "antd";
+
+const userSchema = z.object({
+  address: z.object({
+    street: z.string(),
+    city: z.string(),
+  }),
+});
+
+export const { useCustomFormInstance: useUserFormInstance } = createFormHook({
+  validator: userSchema,
+});
+// ---cut---
+function AddressSection() {
+  const { FormItem } = useUserFormInstance({ inheritAt: ["address"] });
+  // FormItem only accepts "street" | "city"
+  return (
+    <FormItem name="street">
+      <Input />
+    </FormItem>
+  );
+}
+```
+
+### inherit (Dynamic)
+
+Read the path from context. More flexible but less type-safe.
+
+```tsx
+import React from "react";
+import { useFormInstance } from "antd-typed";
+import { Input } from "antd";
+
+type Address = { street: string; city: string };
+
+function AddressFields() {
+  // Type is provided manually
+  const { FormItem } = useFormInstance<Address>({ inherit: true });
+  return (
+    <FormItem name="street">
+      <Input />
+    </FormItem>
+  );
+}
+```
+
+Use `inheritAt` when the component is tied to a specific form. Use `inherit` when the component is generic and reused across forms.
+
+## Watching Values
+
+Both hooks provide a typed `useWatch` for reactive field access:
+
+```tsx twoslash
+import React from "react";
+import { z } from "zod";
+import { createFormHook } from "antd-typed";
+
+const userSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+});
+
+export const { useCustomFormInstance: useUserFormInstance } = createFormHook({
+  validator: userSchema,
+});
+// ---cut---
+function NamePreview() {
+  const { useWatch } = useUserFormInstance();
+  const name = useWatch("name");
+  //    ^?
+
+  return <div>Hello, {name ?? "stranger"}</div>;
+}
+```
+
+## Project Organization
+
+A common pattern is to define form hooks in a shared file:
+
+```
+src/
+  forms/
+    user-form.ts      # createFormHook for user schema
+    company-form.ts   # createFormHook for company schema
+  components/
+    UserForm.tsx      # Uses useUserForm
+    AddressSection.tsx # Uses useUserFormInstance
+```
+
+```ts
+// forms/user-form.ts
+import { createFormHook } from "antd-typed";
+import { userSchema } from "../schemas";
+
+export const {
+  useCustomForm: useUserForm,
+  useCustomFormInstance: useUserFormInstance,
+} = createFormHook({ validator: userSchema });
+```
+
+Components import the specific hooks they need, getting full type safety tied to that schema.
+
+## useForm vs createFormHook
+
+| Feature                | `useForm`                    | `createFormHook` |
+| ---------------------- | ---------------------------- | ---------------- |
+| Single component forms | Yes                          | Overkill         |
+| Multi-component forms  | Works with `useFormInstance` | Preferred        |
+| Type-safe `inheritAt`  | No                           | Yes              |
+| Reusable across files  | Limited                      | Designed for it  |
+
+For simple forms contained in one component, `useForm` is sufficient. For forms split across multiple components or files, `createFormHook` provides better type safety and organization.

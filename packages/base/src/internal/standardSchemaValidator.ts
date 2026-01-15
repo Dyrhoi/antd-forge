@@ -41,8 +41,6 @@ export function createSchemaRule<TSchema extends StandardSchemaV1>(
         return Promise.resolve();
       }
 
-      console.log(result.issues, fieldPath);
-
       const matchingIssue = result.issues.find((issue) => {
         if (!issue.path) return false;
         const issuePath = normalizePath(issue.path);

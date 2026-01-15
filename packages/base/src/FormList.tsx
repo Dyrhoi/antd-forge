@@ -1,9 +1,11 @@
 import { Form, FormListFieldData, FormListOperation } from "antd";
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState, useEffect, useContext } from "react";
 import { FormListProps } from "./internal/antd-types";
 import { useNamePrefix } from "./internal/NamePrefixContext";
 import { normalizeNamePath } from "./internal/path-segments";
 import { GetArrayItemType, InnerPaths } from "./internal/path-types";
+import { FormContext } from "./internal/FormProvider";
+import { createSchemaRule } from "./internal/standardSchemaValidator";
 
 /**
  * Field data for each item in the FormList.
@@ -105,7 +107,7 @@ export function createFormList<
 
     return (
       <>
-        {/* Shadow Form.List - just captures operations and fields, renders nothing visible */}
+        {/* Shadow Form.List - captures operations, fields, and validates with rules */}
         <Form.List name={namePath} initialValue={initialValue} {...rest}>
           {(fields, operation, meta) => {
             // Update state when Form.List re-renders
@@ -120,7 +122,7 @@ export function createFormList<
             );
           }}
         </Form.List>
-        {/* Render children outside Form.List's context - no name prefix applied */}
+        {/* Wrap children in Form.Item for proper error styling (no name - just for layout) */}
         {children(listState.fields, listState.operation, listState.meta)}
       </>
     );

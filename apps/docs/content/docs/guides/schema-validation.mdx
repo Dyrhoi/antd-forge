@@ -1,0 +1,187 @@
+---
+title: Schema Validation
+icon: ShieldCheck
+description: Runtime validation with Standard Schema validators.
+sources:
+  Standard Schema: https://standardschema.dev
+---
+
+antd-typed validates form data on submit using your schema. Validation errors are automatically mapped to the corresponding form fields.
+
+## How Validation Works
+
+When the form submits:
+
+1. All field values are collected
+2. Values are passed through your schema's `parse` or `validate` function
+3. If validation passes, `onFinish` receives the parsed output
+4. If validation fails, errors appear on the relevant fields
+
+```tsx twoslash
+import React from "react";
+import { z } from "zod";
+import { useForm } from "antd-typed";
+import { Input, InputNumber } from "antd";
+
+const schema = z.object({
+  email: z.string().email("Please enter a valid email"),
+  age: z.coerce.number().min(18, "Must be 18 or older"),
+});
+
+function SignupForm() {
+  const { Form, FormItem } = useForm({
+    validator: schema,
+    onFinish: (values) => {
+      // Only called if validation passes
+      // values.age is number (coerced from string input)
+      console.log(values);
+    },
+  });
+
+  return (
+    <Form layout="vertical">
+      <FormItem name="email" label="Email">
+        <Input />
+      </FormItem>
+      <FormItem name="age" label="Age">
+        <InputNumber />
+      </FormItem>
+    </Form>
+  );
+}
+```
+
+## Type Coercion
+
+Schemas can transform values during validation. This is useful when form inputs produce strings but you need numbers or dates.
+
+```ts twoslash
+import { z } from "zod";
+
+const schema = z.object({
+  // Input is string "25", output is number 25
+  age: z.coerce.number(),
+
+  // Input is string "2024-01-15", output is Date object
+  birthDate: z.coerce.date(),
+
+  // Trim whitespace from string inputs
+  username: z.string().trim(),
+});
+```
+
+The `onFinish` callback receives the transformed values, not the raw form input.
+
+## Required Field Detection
+
+antd-typed automatically detects required fields from your schema and marks them in the UI. A field is considered required if it fails validation when empty.
+
+```tsx twoslash
+import React from "react";
+import { z } from "zod";
+import { useForm } from "antd-typed";
+import { Input } from "antd";
+
+const schema = z.object({
+  name: z.string().min(1), // Required (min length 1)
+  bio: z.string().optional(), // Optional
+  website: z.string().url().or(z.literal("")), // Optional (empty string allowed)
+});
+
+function ProfileForm() {
+  const { Form, FormItem } = useForm({ validator: schema });
+
+  return (
+    <Form layout="vertical">
+      {/* Shows required asterisk */}
+      <FormItem name="name" label="Name">
+        <Input />
+      </FormItem>
+
+      {/* No asterisk */}
+      <FormItem name="bio" label="Bio">
+        <Input.TextArea />
+      </FormItem>
+
+      {/* No asterisk */}
+      <FormItem name="website" label="Website">
+        <Input />
+      </FormItem>
+    </Form>
+  );
+}
+```
+
+## Error Messages
+
+Error messages come directly from your schema. Place them where you define the validation rule.
+
+```ts twoslash
+import { z } from "zod";
+
+const schema = z.object({
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain an uppercase letter")
+    .regex(/[0-9]/, "Password must contain a number"),
+});
+```
+
+When validation fails, these messages appear below the corresponding form field.
+
+## Cross-Field Validation
+
+Use schema refinements to validate relationships between fields.
+
+```ts twoslash
+import { z } from "zod";
+
+const schema = z
+  .object({
+    password: z.string().min(8),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"], // Error shows on confirmPassword field
+  });
+```
+
+## Without a Schema
+
+You can use antd-typed without a schema by providing a TypeScript type directly. This gives you type-safe field names but no runtime validation.
+
+```tsx twoslash
+import React from "react";
+import { useForm } from "antd-typed";
+import { Input } from "antd";
+
+type FormValues = {
+  email: string;
+  name: string;
+};
+
+function MyForm() {
+  const { Form, FormItem } = useForm<FormValues>({
+    onFinish: (values) => {
+      // values is typed as FormValues
+      // but no runtime validation occurs
+      console.log(values);
+    },
+  });
+
+  return (
+    <Form>
+      <FormItem name="email">
+        <Input />
+      </FormItem>
+      <FormItem name="name">
+        <Input />
+      </FormItem>
+    </Form>
+  );
+}
+```
+
+This approach works for simple forms where validation happens server-side or isn't needed.

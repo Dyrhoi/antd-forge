@@ -1,0 +1,185 @@
+---
+title: Getting Started
+icon: Rocket
+description: Build your first type-safe form with antd-typed.
+sources:
+  Form: https://ant.design/components/form
+  Standard Schema: https://standardschema.dev
+---
+
+import { Step, Steps } from "fumadocs-ui/components/steps";
+
+This guide walks through building a form with full type safety and schema validation.
+
+## Quick Start
+
+<Steps>
+
+<Step>
+### Define a Schema
+
+Create a schema that describes your form structure. This example uses Zod, but any Standard Schema library works.
+
+```ts twoslash
+import { z } from "zod";
+
+const userSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  age: z.coerce.number().min(18, "Must be 18 or older"),
+});
+```
+
+The schema serves as the single source of truth for types and validation.
+
+</Step>
+
+<Step>
+### Create the Form
+
+Use `useForm` with your schema. It returns typed components that enforce your schema structure.
+
+```tsx twoslash
+import React from "react";
+import { z } from "zod";
+const userSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  age: z.coerce.number().min(18, "Must be 18 or older"),
+});
+// ---cut---
+import { useForm } from "antd-typed";
+import { Input, InputNumber, Button } from "antd";
+
+function UserForm() {
+  const { Form, FormItem } = useForm({
+    validator: userSchema,
+    onFinish: (values) => {
+      // values is fully typed as { username: string; email: string; age: number }
+      console.log(values);
+    },
+  });
+
+  return (
+    <Form layout="vertical">
+      <FormItem name="username" label="Username">
+        <Input />
+      </FormItem>
+      <FormItem name="email" label="Email">
+        <Input />
+      </FormItem>
+      <FormItem name="age" label="Age">
+        <InputNumber style={{ width: "100%" }} />
+      </FormItem>
+      <Button type="primary" htmlType="submit">
+        Submit
+      </Button>
+    </Form>
+  );
+}
+```
+
+</Step>
+
+<Step>
+### Type Safety in Action
+
+The `FormItem` component only accepts field names that exist in your schema. Typos are caught at compile time.
+
+```tsx twoslash
+// @errors: 2820
+import React from "react";
+import { z } from "zod";
+import { useForm } from "antd-typed";
+import { Input } from "antd";
+
+const userSchema = z.object({
+  username: z.string(),
+  email: z.string().email(),
+});
+
+function Example() {
+  const { FormItem } = useForm({ validator: userSchema });
+
+  return (
+    <>
+      <FormItem name="usernam">
+        <Input />
+      </FormItem>
+    </>
+  );
+}
+```
+
+</Step>
+
+</Steps>
+
+## What `useForm` Returns
+
+The hook returns everything you need to build forms:
+
+| Return      | Description                                            |
+| ----------- | ------------------------------------------------------ |
+| `Form`      | A typed wrapper around Ant Design's Form               |
+| `FormItem`  | Type-safe form field with autocomplete for `name`      |
+| `FormList`  | Type-safe dynamic field list                           |
+| `form`      | The Ant Design form instance for imperative operations |
+| `formProps` | Props to spread on a standard `<Form>` if preferred    |
+| `useWatch`  | Type-safe field value watcher                          |
+
+## Migration from Ant Design
+
+If you have an existing form, migration is straightforward:
+
+```tsx
+// Before
+import { Form } from "antd";
+
+function MyForm() {
+  const [form] = Form.useForm();
+  return (
+    <Form form={form} onFinish={(values) => console.log(values)}>
+      <Form.Item name="email">
+        <Input />
+      </Form.Item>
+    </Form>
+  );
+}
+
+// After
+import { useForm } from "antd-typed";
+
+function MyForm() {
+  const { Form, FormItem } = useForm({
+    validator: mySchema,
+    onFinish: (values) => console.log(values),
+  });
+  return (
+    <Form>
+      <FormItem name="email">
+        <Input />
+      </FormItem>
+    </Form>
+  );
+}
+```
+
+The structure stays the same. You gain types and validation by adding a schema.
+
+## Next Steps
+
+<ExamplePreview src="examples/use-form-example.tsx" />
+
+<Cards>
+  <Card
+    title="Schema Validation"
+    description="Learn how validation works and how to customize it."
+    href="/docs/guides/schema-validation"
+  />
+  <Card
+    title="Form Composition"
+    description="Break forms into reusable components."
+    href="/docs/guides/form-composition"
+  />
+</Cards>

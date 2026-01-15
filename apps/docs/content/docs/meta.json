@@ -3,9 +3,12 @@
     "---Getting Started---",
     "index",
     "installation",
+    "getting-started",
     "---Guides---",
+    "guides/schema-validation",
     "guides/form-composition",
-    "---Hooks---",
-    "...hooks"
+    "guides/form-list",
+    "guides/factory-hooks",
+    "guides/auto-submit"
   ]
 }

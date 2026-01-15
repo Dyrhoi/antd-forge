@@ -1,47 +1,81 @@
 ---
 title: Introduction
 icon: Notebook
-description: Antd Design Forge is an opinionated collection of components and hooks for Ant Design that I find myself recreating across projects. This is my take on better TypeScript support, schema validation, and common patterns for building data-driven applications.
+description: Type-safe forms for Ant Design with schema validation.
+sources:
+  Ant Design: https://ant.design
+  Standard Schema: https://standardschema.dev
 ---
 
-<Callout title="Early Development" type="warn">
-  antd-typed is still in early development and does not have a stable release
-  yet. The API may change.
-</Callout>
+## What is antd-typed?
+
+antd-typed brings TypeScript-first form handling to Ant Design. It wraps the existing Form API to provide full type inference for field names, values, and validation without changing how you build forms.
+
+The core idea is simple: define your form structure once (with a schema or TypeScript type), and get autocomplete, type checking, and runtime validation everywhere you use it.
+
+```tsx twoslash
+import React from "react";
+import { useForm } from "antd-typed";
+import { z } from "zod";
+
+const schema = z.object({
+  email: z.string().email(),
+  age: z.coerce.number().min(18),
+});
+
+const { Form, FormItem, form } = useForm({
+  validator: schema,
+  onFinish: (values) => {
+    // values is { email: string; age: number }
+    console.log(values);
+  },
+});
+```
 
 ## Why?
 
-In my experience, Ant Design, although being a generally well made library, has some shortcomings with typings and you typically have to reach for the same boilerplate across applications to build common SaaS features.
+Ant Design's Form component works well but has weak TypeScript support. Field names are strings without validation, `onFinish` receives `any`, and there is no connection between your data types and form fields.
 
-[refine.dev](https://refine.dev/) solves this in their own ways but locks you into their data flow and framework.
+This leads to common issues:
 
-**antd-typed** takes a different approach: no framework or library lock-ins. You can enhance your experience using industry standard libraries like TanStack Query and your choice of schema validation, but everything is built with just Ant Design and React as a base.
+- Typos in field names that only show up at runtime
+- Manual type assertions on form values
+- Validation logic duplicated between schema and form rules
+- No autocomplete when working with nested or dynamic forms
 
-<Cards>
-  <Card
-    title="Type-safe Forms"
-    description="Full autocomplete for field names with types inferred from your schema validators."
-  />
-  <Card
-    title="Schema Validation"
-    description="First-class support for Standard Schema validators like Zod, Valibot, and ArkType."
-  />
-  <Card
-    title="Form + Query Integration"
-    description="Connect filter forms to TanStack Query with minimal boilerplate using useTable."
-  />
-  <Card
-    title="Easy Migration"
-    description="If you're already using Ant Design, it's mostly adjusting imports. No framework lock-in."
-  />
-</Cards>
+antd-typed solves these by inferring types from your schema and threading them through every form component.
+
+## Design Principles
+
+**Minimal API surface.** You learn `useForm` and you know most of the library. The returned components (`Form`, `FormItem`, `FormList`) work exactly like their Ant Design counterparts.
+
+**Iterative migration.** For simple forms, swap your imports and add a schema. Your existing JSX structure stays the same.
+
+**Schema as source of truth.** Define validation once in Zod, Valibot, or any Standard Schema library. Types, validation rules, and required field detection all derive from it.
+
+**No runtime overhead for types.** All type checking happens at compile time. The runtime code is a thin wrapper around Ant Design's Form.
 
 ## Standard Schema Support
 
-antd-typed supports [Standard Schema](https://github.com/standard-schema/standard-schema) specification, which means you can use any compatible validation library:
+antd-typed implements the [Standard Schema](https://github.com/standard-schema/standard-schema) specification. Any compatible validation library works out of the box:
 
-- **[Zod](https://zod.dev)** - TypeScript-first schema validation
-- **[Valibot](https://valibot.dev)** - Lightweight schema library
-- **[ArkType](https://arktype.io)** - TypeScript's 1:1 validator
+- [Zod](https://zod.dev)
+- [Valibot](https://valibot.dev)
+- [ArkType](https://arktype.io)
 
-Simply pass your schema to the `validator` option and antd-typed handles the rest: validation on submit, error mapping to fields, and automatic required field detection.
+Pass your schema to the `validator` option and antd-typed handles validation on submit, error mapping to fields, and required field detection.
+
+## Next Steps
+
+<Cards>
+  <Card
+    title="Installation"
+    description="Add antd-typed to your project."
+    href="/docs/installation"
+  />
+  <Card
+    title="Getting Started"
+    description="Build your first type-safe form."
+    href="/docs/getting-started"
+  />
+</Cards>

@@ -1,18 +1,18 @@
 ---
 title: Installation
 icon: CirclePlay
-description: Get started with antd-typed in your Ant Design project.
+description: Add antd-typed to your Ant Design project.
+sources:
+  Ant Design: https://ant.design
+  Standard Schema: https://standardschema.dev
 ---
 
-import { Step, Steps } from "fumadocs-ui/components/steps";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 ## Requirements
 
-antd-typed requires the following peer dependencies:
-
-- **React** 18.0+ or 19.0+
-- **Ant Design** 5.0+ or 6.0+
+- React 18.0+ or 19.0+
+- Ant Design 5.0+ or 6.0+
 
 ## Install
 
@@ -23,79 +23,7 @@ antd-typed requires the following peer dependencies:
   <Tab value="yarn">```bash yarn add antd-typed ```</Tab>
 </Tabs>
 
-## Setup
-
-<Steps>
-
-<Step>
-### Add the Provider
-
-Wrap your application with `AntdForgeProvider`. This sets up the internal TanStack Query client used by `useTable`.
-
-```tsx
-import { AntdForgeProvider } from "antd-typed";
-
-function App() {
-  return <AntdForgeProvider>{/* Your app */}</AntdForgeProvider>;
-}
-```
-
-<Callout>
-If you're already using TanStack Query, pass your existing `queryClient` to avoid creating a duplicate:
-
-```tsx
-<AntdForgeProvider queryClient={yourQueryClient}>
-```
-
-</Callout>
-
-</Step>
-
-<Step>
-### Start using the hooks
-
-You're ready to go! Here's a quick example with `useForm`:
-
-```tsx
-import { useForm } from "antd-typed";
-import { Form, Input, Button } from "antd";
-import { z } from "zod";
-
-const schema = z.object({
-  email: z.string().email(),
-  name: z.string().min(2),
-});
-
-function MyForm() {
-  const { formProps, FormItem } = useForm({
-    validator: schema,
-    onFinish: (values) => {
-      // values is fully typed as { email: string; name: string }
-      console.log(values);
-    },
-  });
-
-  return (
-    <Form {...formProps}>
-      <FormItem name="email" label="Email">
-        <Input />
-      </FormItem>
-      <FormItem name="name" label="Name">
-        <Input />
-      </FormItem>
-      <Button type="primary" htmlType="submit">
-        Submit
-      </Button>
-    </Form>
-  );
-}
-```
-
-</Step>
-
-</Steps>
-
-## Schema Validator (Optional)
+## Schema Validator
 
 antd-typed works with any [Standard Schema](https://github.com/standard-schema/standard-schema) compatible validator. Install your preferred library:
 
@@ -105,7 +33,4 @@ antd-typed works with any [Standard Schema](https://github.com/standard-schema/s
   <Tab value="ArkType">```bash npm install arktype ```</Tab>
 </Tabs>
 
-<Callout>
-  You can also use `useForm` and `useTable` without a schema validator by
-  providing an explicit type parameter instead.
-</Callout>
+You can also use antd-typed without a schema validator by passing a TypeScript type directly, though you lose runtime validation.

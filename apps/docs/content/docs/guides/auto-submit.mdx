@@ -1,0 +1,140 @@
+---
+title: Auto Submit
+icon: Zap
+description: Automatically submit forms on value changes.
+sources:
+  Form: https://ant.design/components/form
+---
+
+Some forms should submit automatically without a button: search filters, live previews, settings that save immediately. The `autoSubmit` option enables this behavior.
+
+## Basic Usage
+
+Set `autoSubmit: "auto"` to submit whenever any field changes:
+
+```tsx twoslash
+import React from "react";
+import { z } from "zod";
+import { useForm } from "antd-typed";
+import { Input, Form } from "antd";
+
+const schema = z.object({
+  search: z.string(),
+});
+
+function SearchForm() {
+  const { Form, FormItem } = useForm({
+    validator: schema,
+    autoSubmit: "auto",
+    onFinish: (values) => {
+      // Called on every change (debounced)
+      console.log("Searching:", values.search);
+    },
+  });
+
+  return (
+    <Form>
+      <FormItem name="search">
+        <Input placeholder="Search..." />
+      </FormItem>
+    </Form>
+  );
+}
+```
+
+## How It Works
+
+Auto submit uses a leading + trailing debounce pattern:
+
+1. **First change**: Submits immediately (leading edge)
+2. **Rapid changes**: Waits for typing to pause (trailing edge)
+3. **After debounce**: Submits with final values
+
+This gives instant feedback for discrete controls like selects and checkboxes, while still debouncing rapid text input.
+
+```
+User types: h-e-l-l-o
+Timeline:   |-----300ms-----|
+Submits:    h              hello
+            ^              ^
+            leading        trailing
+```
+
+## Custom Debounce
+
+The default debounce is 300ms. Adjust it with the config object:
+
+```tsx twoslash
+import { z } from "zod";
+import { useForm } from "antd-typed";
+
+const schema = z.object({ search: z.string() });
+// ---cut---
+const { Form, FormItem } = useForm({
+  validator: schema,
+  autoSubmit: {
+    mode: "auto",
+    debounce: 500, // Wait 500ms after last change
+  },
+  onFinish: (values) => {
+    // ...
+  },
+});
+```
+
+Shorter debounce (100-200ms) feels more responsive. Longer debounce (500-1000ms) reduces server load.
+
+## Validation
+
+Auto submit respects schema validation. Invalid values don't trigger `onFinish`:
+
+```tsx twoslash
+import React from "react";
+import { z } from "zod";
+import { useForm } from "antd-typed";
+import { Input, Form } from "antd";
+
+const schema = z.object({
+  search: z.string().min(3, "Enter at least 3 characters"),
+});
+
+function SearchForm() {
+  const { Form, FormItem } = useForm({
+    validator: schema,
+    autoSubmit: "auto",
+    onFinish: (values) => {
+      // Only called when search.length >= 3
+      console.log(values);
+    },
+  });
+
+  return (
+    <Form>
+      <FormItem name="search">
+        <Input placeholder="Search (min 3 chars)..." />
+      </FormItem>
+    </Form>
+  );
+}
+```
+
+## Modes
+
+| Mode     | Behavior                                                     |
+| -------- | ------------------------------------------------------------ |
+| `"off"`  | Default. No automatic submission.                            |
+| `"auto"` | Submit on any field change with leading + trailing debounce. |
+
+## Focus Retention
+
+Auto submit preserves input focus during re-renders. Users can keep typing without interruption even when parent components update in response to form changes.
+
+## Try It
+
+Basic search input with auto-submit:
+
+<ExamplePreview src="examples/use-form-auto-submit-example.tsx" />
+
+Filter bar with multiple controls:
+
+<ExamplePreview src="examples/use-form-filter-example.tsx" />

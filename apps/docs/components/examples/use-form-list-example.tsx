@@ -2,7 +2,7 @@
 
 import { MinusCircleOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useForm } from "antd-typed";
-import { Button, Checkbox, Flex, Form, Input } from "antd";
+import { Button, Checkbox, Flex, Input } from "antd";
 import z from "zod";
 
 export default function UseFormExample() {
@@ -34,7 +34,7 @@ export default function UseFormExample() {
       <FormItem name="username" label="Username">
         <Input />
       </FormItem>
-      <FormItem label="Emails" name="emails">
+      <FormItem label="Emails" name={"emails"}>
         <FormList name="emails" initialValue={[]}>
           {(fields, { add, remove }) => (
             <>

@@ -1,0 +1,264 @@
+---
+title: Form List
+icon: ListPlus
+description: Build forms with repeatable field groups using FormList.
+sources:
+  Form.List: https://ant.design/components/form#formlist
+---
+
+Forms often need dynamic arrays of fields: multiple email addresses, a list of team members, line items in an order. `FormList` handles this while maintaining type safety.
+
+## Basic Usage
+
+`FormList` manages an array of values. It provides a render function with the current fields and operations to add or remove items.
+
+```tsx twoslash
+import React from "react";
+import { z } from "zod";
+import { useForm } from "antd-typed";
+import { Input, Button, Form } from "antd";
+
+const schema = z.object({
+  emails: z.array(z.string().email()),
+});
+
+function EmailListForm() {
+  const { Form, FormItem, FormList } = useForm({
+    validator: schema,
+    onFinish: (values) => console.log(values),
+  });
+
+  return (
+    <Form layout="vertical">
+      <FormList name="emails" initialValue={[""]}>
+        {(fields, { add, remove }) => (
+          <>
+            {fields.map(({ key, name: index }) => (
+              <div key={key} style={{ display: "flex", gap: 8 }}>
+                <FormItem name={["emails", index]} style={{ flex: 1 }}>
+                  <Input placeholder="email@example.com" />
+                </FormItem>
+                <Button onClick={() => remove(index)}>Remove</Button>
+              </div>
+            ))}
+            <Button onClick={() => add("")}>Add Email</Button>
+          </>
+        )}
+      </FormList>
+      <Button type="primary" htmlType="submit">
+        Submit
+      </Button>
+    </Form>
+  );
+}
+```
+
+## Field Structure
+
+Each item in `fields` contains:
+
+| Property | Type     | Description                            |
+| -------- | -------- | -------------------------------------- |
+| `key`    | `number` | Stable React key for the item          |
+| `name`   | `number` | Array index, used to build field paths |
+
+Use `key` for React's key prop and `name` (the index) to construct field paths.
+
+## Complex Array Items
+
+Array items can be objects with multiple fields.
+
+```tsx
+import React from "react";
+import { z } from "zod";
+import { useForm } from "antd-typed";
+import { Input, InputNumber, Button, Form } from "antd";
+
+const schema = z.object({
+  users: z.array(
+    z.object({
+      name: z.string().min(1),
+      age: z.coerce.number().min(0),
+    }),
+  ),
+});
+
+function TeamForm() {
+  const { Form, FormItem, FormList } = useForm({
+    validator: schema,
+    onFinish: (values) => console.log(values),
+  });
+
+  return (
+    <Form layout="vertical">
+      <FormList name="users" initialValue={[{ name: "", age: 0 }]}>
+        {(fields, { add, remove }) => (
+          <>
+            {fields.map(({ key, name: index }) => (
+              <div key={key} style={{ display: "flex", gap: 8 }}>
+                <FormItem
+                  name={["users", index, "name"]}
+                  label={index === 0 ? "Name" : undefined}
+                  style={{ flex: 1 }}
+                >
+                  <Input />
+                </FormItem>
+                <FormItem
+                  name={["users", index, "age"]}
+                  label={index === 0 ? "Age" : undefined}
+                >
+                  <InputNumber />
+                </FormItem>
+                <Button onClick={() => remove(index)}>Remove</Button>
+              </div>
+            ))}
+            <Button onClick={() => add({ name: "", age: 0 })}>Add User</Button>
+          </>
+        )}
+      </FormList>
+      <Button type="primary" htmlType="submit">
+        Submit
+      </Button>
+    </Form>
+  );
+}
+```
+
+Field paths include the array index: `["users", 0, "name"]`, `["users", 1, "age"]`, etc.
+
+## Nested FormLists
+
+FormLists can contain other FormLists for multi-level arrays.
+
+```tsx
+import React from "react";
+import { z } from "zod";
+import { useForm } from "antd-typed";
+import { Input, Button, Form } from "antd";
+
+const schema = z.object({
+  departments: z.array(
+    z.object({
+      name: z.string(),
+      employees: z.array(
+        z.object({
+          name: z.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+function OrgForm() {
+  const { Form, FormItem, FormList } = useForm({
+    validator: schema,
+    onFinish: (values) => console.log(values),
+  });
+
+  return (
+    <Form layout="vertical">
+      <FormList name="departments" initialValue={[]}>
+        {(deptFields, deptOps) => (
+          <>
+            {deptFields.map(({ key: deptKey, name: deptIndex }) => (
+              <div
+                key={deptKey}
+                style={{
+                  marginBottom: 16,
+                  padding: 16,
+                  border: "1px solid #eee",
+                }}
+              >
+                <FormItem
+                  name={["departments", deptIndex, "name"]}
+                  label="Department"
+                >
+                  <Input />
+                </FormItem>
+
+                <FormList
+                  name={["departments", deptIndex, "employees"]}
+                  initialValue={[]}
+                >
+                  {(empFields, empOps) => (
+                    <>
+                      {empFields.map(({ key: empKey, name: empIndex }) => (
+                        <div key={empKey} style={{ display: "flex", gap: 8 }}>
+                          <FormItem
+                            name={[
+                              "departments",
+                              deptIndex,
+                              "employees",
+                              empIndex,
+                              "name",
+                            ]}
+                            style={{ flex: 1 }}
+                          >
+                            <Input placeholder="Employee name" />
+                          </FormItem>
+                          <Button onClick={() => empOps.remove(empIndex)}>
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        size="small"
+                        onClick={() => empOps.add({ name: "" })}
+                      >
+                        Add Employee
+                      </Button>
+                    </>
+                  )}
+                </FormList>
+
+                <Button onClick={() => deptOps.remove(deptIndex)}>
+                  Remove Department
+                </Button>
+              </div>
+            ))}
+            <Button onClick={() => deptOps.add({ name: "", employees: [] })}>
+              Add Department
+            </Button>
+          </>
+        )}
+      </FormList>
+      <Button type="primary" htmlType="submit">
+        Submit
+      </Button>
+    </Form>
+  );
+}
+```
+
+## Operations Reference
+
+The second argument to the render function provides these operations:
+
+| Operation                    | Description                                 |
+| ---------------------------- | ------------------------------------------- |
+| `add(defaultValue?, index?)` | Add an item, optionally at a specific index |
+| `remove(index)`              | Remove the item at index                    |
+| `move(from, to)`             | Move an item from one index to another      |
+
+```tsx
+{
+  (fields, { add, remove, move }) => (
+    <>
+      {/* ... */}
+      <Button onClick={() => add({ name: "" })}>Add to end</Button>
+      <Button onClick={() => add({ name: "" }, 0)}>Add to start</Button>
+      <Button onClick={() => move(0, fields.length - 1)}>
+        Move first to last
+      </Button>
+    </>
+  );
+}
+```
+
+## Reusable List Item Components
+
+For reusable components inside FormList, see [Form Composition](/docs/guides/form-composition#composition-with-formlist). You can use `useFormInstance` with inheritance to create components that work at any position in a list.
+
+## Try It
+
+<ExamplePreview src="examples/use-form-list-example.tsx" />
