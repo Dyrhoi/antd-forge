@@ -5,8 +5,16 @@ import {
   buildFullPath,
   NamePrefixProvider,
 } from "./internal/NamePrefixContext";
-import { arePathsEqual, normalizeNamePath } from "./internal/path-segments";
-import type { InnerPaths, SimplePathSegment } from "./internal/path-types";
+import {
+  arePathsEqual,
+  createNormalizeParams,
+  normalizeNamePath,
+} from "./internal/path-segments";
+import type {
+  InnerPaths,
+  NormalizeValueFn,
+  SimplePathSegment,
+} from "./internal/path-types";
 import { createSchemaRule } from "./internal/standardSchemaValidator";
 import { NamePath } from "antd/es/form/interface";
 
@@ -43,7 +51,7 @@ export type TypedFormItemComponent<TParsedValues> = (
   props: TypedFormItemProps<TParsedValues>,
 ) => ReactNode;
 
-export type CreateFormItemOptions = {
+export type CreateFormItemOptions<TParsedValues = unknown> = {
   validator?: StandardSchemaV1;
   requiredFields?: Array<StandardSchemaV1.Issue["path"]>;
   /**
@@ -52,6 +60,11 @@ export type CreateFormItemOptions = {
    * When set, the FormItem does NOT set a new prefix context for children.
    */
   prefix?: SimplePathSegment[];
+  /**
+   * Global normalize function called for all field values.
+   * When provided, this function is called with the field path and value.
+   */
+  normalizeValue?: NormalizeValueFn<TParsedValues>;
 };
 
 /**
@@ -87,15 +100,16 @@ export type CreateFormItemOptions = {
  * ```
  */
 export function createFormItem<TParsedValues>(
-  options: CreateFormItemOptions = {},
+  options: CreateFormItemOptions<TParsedValues> = {},
 ): TypedFormItemComponent<TParsedValues> {
-  const { validator, requiredFields, prefix } = options;
+  const { validator, requiredFields, prefix, normalizeValue } = options;
   const isInheritMode = prefix !== undefined;
 
   const FormItem: TypedFormItemComponent<TParsedValues> = ({
     rules,
     name,
     children,
+    normalize,
     ...rest
   }) => {
     // Convert name to array path
@@ -108,15 +122,14 @@ export function createFormItem<TParsedValues>(
         : namePath
       : undefined;
 
-    // Default normalize behavior: convert empty strings to undefined
-    const defaultNormalize: FormItemProps<TParsedValues>["normalize"] = (
-      value,
-    ) => {
-      if (value === "") {
-        return undefined;
-      }
-      return value;
-    };
+    // Build normalize function: per-item normalize prop takes precedence,
+    // then global normalizeValue, then no normalization
+    const resolvedNormalize: FormItemProps<TParsedValues>["normalize"] =
+      normalize !== undefined
+        ? normalize
+        : normalizeValue && fullPath
+          ? (value) => normalizeValue(createNormalizeParams(fullPath, value))
+          : undefined;
 
     // Build schema validation rule if validator is provided
     const schemaRule =
@@ -138,7 +151,7 @@ export function createFormItem<TParsedValues>(
         name={fullPath as NamePath<TParsedValues>}
         rules={mergedRules}
         required={required}
-        normalize={defaultNormalize}
+        normalize={resolvedNormalize}
         {...rest}
       >
         {children}

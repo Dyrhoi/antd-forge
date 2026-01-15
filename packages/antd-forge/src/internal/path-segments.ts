@@ -1,4 +1,4 @@
-import type { SimplePathSegment } from "./path-types";
+import type { NormalizeValueParams, SimplePathSegment } from "./path-types";
 
 export function normalizePathSegment(segment: unknown): unknown {
   if (segment === null || segment === undefined) return segment;
@@ -40,4 +40,49 @@ export function arePathsEqual(
   if (!a || !b) return false;
   if (a.length !== b.length) return false;
   return a.every((segment, index) => arePathSegmentsEqual(segment, b[index]));
+}
+
+// ============================================================================
+// Normalize Value Helpers
+// ============================================================================
+
+/**
+ * Creates a NormalizeValueParams object with a type-narrowing `match` method.
+ *
+ * @param name - The field name path
+ * @param value - The current field value
+ * @returns NormalizeValueParams with match type guard
+ */
+export function createNormalizeParams<T>(
+  name: SimplePathSegment[],
+  value: unknown,
+): NormalizeValueParams<T> {
+  return {
+    name,
+    value,
+    match(path): boolean {
+      const normalizedPath = normalizeNamePath(path);
+      return arePathsEqual(name, normalizedPath);
+    },
+  } as NormalizeValueParams<T>;
+}
+
+/**
+ * Default normalize function that converts empty strings to undefined.
+ * Can be used with `normalizeValue` for common form behavior.
+ *
+ * @example
+ * ```tsx
+ * useForm({
+ *   normalizeValue: defaultEmptyValuesToUndefined,
+ * })
+ * ```
+ */
+export function defaultEmptyValuesToUndefined<T>(
+  params: NormalizeValueParams<T>,
+): unknown {
+  if (params.value === "") {
+    return undefined;
+  }
+  return params.value;
 }

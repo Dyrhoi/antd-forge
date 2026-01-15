@@ -115,4 +115,119 @@ describe("useForm", () => {
       });
     });
   });
+
+  describe("normalizeValue", () => {
+    const schema = z.object({
+      username: z.string(),
+      age: z.number(),
+      tags: z.array(z.string()),
+      profile: z.object({
+        bio: z.string(),
+      }),
+    });
+
+    it("params.value should be unknown before narrowing", () => {
+      useForm({
+        validator: schema,
+        normalizeValue: (params) => {
+          expectTypeOf(params.value).toBeUnknown();
+          return params.value;
+        },
+      });
+    });
+
+    it("params.name should be union of valid paths", () => {
+      useForm({
+        validator: schema,
+        normalizeValue: (params) => {
+          // name is one of the valid paths from the schema
+          expectTypeOf(params.name).toEqualTypeOf<
+            | ["username"]
+            | ["age"]
+            | ["tags"]
+            | ["tags", number]
+            | ["profile"]
+            | ["profile", "bio"]
+          >();
+          return params.value;
+        },
+      });
+    });
+
+    it("match should narrow value type for string field", () => {
+      useForm({
+        validator: schema,
+        normalizeValue: (params) => {
+          if (params.match(["username"])) {
+            expectTypeOf(params.value).toEqualTypeOf<string>();
+          }
+          return params.value;
+        },
+      });
+    });
+
+    it("match should narrow value type for number field", () => {
+      useForm({
+        validator: schema,
+        normalizeValue: (params) => {
+          if (params.match(["age"])) {
+            expectTypeOf(params.value).toEqualTypeOf<number>();
+          }
+          return params.value;
+        },
+      });
+    });
+
+    it("match should narrow value type for array field", () => {
+      useForm({
+        validator: schema,
+        normalizeValue: (params) => {
+          if (params.match(["tags"])) {
+            expectTypeOf(params.value).toEqualTypeOf<string[]>();
+          }
+          return params.value;
+        },
+      });
+    });
+
+    it("match should narrow value type for nested object field", () => {
+      useForm({
+        validator: schema,
+        normalizeValue: (params) => {
+          if (params.match(["profile"])) {
+            expectTypeOf(params.value).toEqualTypeOf<{ bio: string }>();
+          }
+          if (params.match(["profile", "bio"])) {
+            expectTypeOf(params.value).toEqualTypeOf<string>();
+          }
+          return params.value;
+        },
+      });
+    });
+
+    it("match should accept string shorthand for single-segment paths", () => {
+      useForm({
+        validator: schema,
+        normalizeValue: (params) => {
+          if (params.match("username")) {
+            expectTypeOf(params.value).toEqualTypeOf<string>();
+          }
+          return params.value;
+        },
+      });
+    });
+
+    it("match should only accept valid paths from schema", () => {
+      useForm({
+        validator: schema,
+        normalizeValue: (params) => {
+          // @ts-expect-error - 'invalid' is not a valid path
+          params.match(["invalid"]);
+          // @ts-expect-error - 'profile.invalid' is not a valid path
+          params.match(["profile", "invalid"]);
+          return params.value;
+        },
+      });
+    });
+  });
 });

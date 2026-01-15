@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import z from "zod";
-import { useForm } from "../src";
+import { useForm, defaultEmptyValuesToUndefined } from "../src";
 import { Input, InputNumber } from "antd";
 import { useState } from "react";
 
@@ -529,6 +529,258 @@ describe("useForm", () => {
       expect(document.activeElement).toBe(input);
       // Should have called onFinish for trailing edge with new value
       expect(onFinish).toHaveBeenLastCalledWith({ search: "test" });
+    });
+  });
+
+  describe("normalizeValue", () => {
+    const schema = z.object({
+      username: z.string(),
+      age: z.coerce.number(),
+      bio: z.string().optional(),
+    });
+
+    it("calls normalizeValue for each field change", async () => {
+      const normalizeValue = vi.fn((params) => params.value);
+
+      function Comp() {
+        const { Form, FormItem } = useForm({
+          validator: schema,
+          normalizeValue,
+        });
+
+        return (
+          <Form>
+            <FormItem name={["username"]}>
+              <Input data-testid="username" />
+            </FormItem>
+            <FormItem name={["age"]}>
+              <Input data-testid="age" />
+            </FormItem>
+          </Form>
+        );
+      }
+
+      const { getByTestId } = render(<Comp />);
+
+      await act(async () => {
+        fireEvent.change(getByTestId("username"), {
+          target: { value: "alice" },
+        });
+      });
+
+      expect(normalizeValue).toHaveBeenCalled();
+      const lastCall = normalizeValue.mock.calls.at(-1)?.[0];
+      expect(lastCall.name).toEqual(["username"]);
+      expect(lastCall.value).toBe("alice");
+    });
+
+    it("match returns true for matching path and false otherwise", async () => {
+      const matchResults: boolean[] = [];
+
+      function Comp() {
+        const { Form, FormItem } = useForm({
+          validator: schema,
+          normalizeValue: (params) => {
+            matchResults.push(params.match(["username"]));
+            matchResults.push(params.match(["age"]));
+            return params.value;
+          },
+        });
+
+        return (
+          <Form>
+            <FormItem name={["username"]}>
+              <Input data-testid="username" />
+            </FormItem>
+          </Form>
+        );
+      }
+
+      const { getByTestId } = render(<Comp />);
+
+      await act(async () => {
+        fireEvent.change(getByTestId("username"), {
+          target: { value: "alice" },
+        });
+      });
+
+      // First match (username) should be true, second match (age) should be false
+      expect(matchResults).toContain(true);
+      expect(matchResults).toContain(false);
+    });
+
+    it("transforms values based on field path", async () => {
+      const onFinish = vi.fn();
+
+      function Comp() {
+        const { Form, FormItem } = useForm({
+          validator: schema,
+          onFinish,
+          normalizeValue: (params) => {
+            if (params.match(["username"])) {
+              return params.value.trim().toLowerCase();
+            }
+            return params.value;
+          },
+        });
+
+        return (
+          <Form>
+            <FormItem name={["username"]}>
+              <Input data-testid="username" />
+            </FormItem>
+            <FormItem name={["age"]}>
+              <Input data-testid="age" />
+            </FormItem>
+            <button type="submit">Submit</button>
+          </Form>
+        );
+      }
+
+      const { getByTestId, getByText } = render(<Comp />);
+
+      await act(async () => {
+        fireEvent.change(getByTestId("username"), {
+          target: { value: "  ALICE  " },
+        });
+        fireEvent.change(getByTestId("age"), { target: { value: "25" } });
+        fireEvent.click(getByText("Submit"));
+      });
+
+      await waitFor(() => expect(onFinish).toHaveBeenCalledTimes(1));
+      expect(onFinish).toHaveBeenCalledWith({
+        username: "alice",
+        age: 25,
+      });
+    });
+
+    it("converts empty strings to undefined when using defaultEmptyValuesToUndefined", async () => {
+      const onFinish = vi.fn();
+
+      // Schema with optional bio field
+      const optionalSchema = z.object({
+        username: z.string(),
+        bio: z.string().optional(),
+      });
+
+      function Comp() {
+        const { Form, FormItem } = useForm({
+          validator: optionalSchema,
+          onFinish,
+          normalizeValue: defaultEmptyValuesToUndefined,
+        });
+
+        return (
+          <Form>
+            <FormItem name={["username"]}>
+              <Input data-testid="username" />
+            </FormItem>
+            <FormItem name={["bio"]}>
+              <Input data-testid="bio" />
+            </FormItem>
+            <button type="submit">Submit</button>
+          </Form>
+        );
+      }
+
+      const { getByTestId, getByText } = render(<Comp />);
+
+      await act(async () => {
+        fireEvent.change(getByTestId("username"), {
+          target: { value: "alice" },
+        });
+        // bio left empty - should become undefined via normalizeValue
+        fireEvent.change(getByTestId("bio"), { target: { value: "" } });
+        fireEvent.click(getByText("Submit"));
+      });
+
+      await waitFor(() => expect(onFinish).toHaveBeenCalledTimes(1));
+      expect(onFinish).toHaveBeenCalledWith({
+        username: "alice",
+        bio: undefined,
+      });
+    });
+
+    it("per-item normalize prop takes precedence over global normalizeValue", async () => {
+      const globalNormalize = vi.fn((params) => params.value + "_global");
+      const itemNormalize = vi.fn((value: string) => value + "_item");
+
+      function Comp() {
+        const { Form, FormItem } = useForm({
+          validator: schema,
+          normalizeValue: globalNormalize,
+        });
+
+        return (
+          <Form>
+            <FormItem name={["username"]} normalize={itemNormalize}>
+              <Input data-testid="username" />
+            </FormItem>
+            <FormItem name={["bio"]}>
+              <Input data-testid="bio" />
+            </FormItem>
+          </Form>
+        );
+      }
+
+      const { getByTestId } = render(<Comp />);
+
+      await act(async () => {
+        fireEvent.change(getByTestId("username"), {
+          target: { value: "alice" },
+        });
+        fireEvent.change(getByTestId("bio"), { target: { value: "hello" } });
+      });
+
+      // username uses item normalize, not global
+      // antd's normalize receives (value, prevValue, allValues)
+      expect(itemNormalize).toHaveBeenCalled();
+      expect(itemNormalize.mock.calls[0]?.[0]).toBe("alice");
+      // bio uses global normalize
+      expect(globalNormalize).toHaveBeenCalled();
+    });
+
+    it("does not normalize when normalizeValue is not provided", async () => {
+      const onFinish = vi.fn();
+
+      // Use a schema that accepts empty string
+      const flexibleSchema = z.object({
+        username: z.string(), // accepts empty string
+      });
+
+      function Comp() {
+        const { Form, FormItem } = useForm({
+          validator: flexibleSchema,
+          onFinish,
+          // no normalizeValue
+        });
+
+        return (
+          <Form>
+            <FormItem name={["username"]}>
+              <Input data-testid="username" />
+            </FormItem>
+            <button type="submit">Submit</button>
+          </Form>
+        );
+      }
+
+      const { getByTestId, getByText } = render(<Comp />);
+
+      await act(async () => {
+        // Type something first, then clear to empty string
+        fireEvent.change(getByTestId("username"), {
+          target: { value: "test" },
+        });
+        fireEvent.change(getByTestId("username"), { target: { value: "" } });
+        fireEvent.click(getByText("Submit"));
+      });
+
+      await waitFor(() => expect(onFinish).toHaveBeenCalledTimes(1));
+      // Empty string passed through without normalization (not converted to undefined)
+      expect(onFinish).toHaveBeenCalledWith({
+        username: "",
+      });
     });
   });
 });

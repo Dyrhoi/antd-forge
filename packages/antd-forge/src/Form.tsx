@@ -30,6 +30,7 @@ function FormInner<TParsedValues>({
       formInstance={opts.form}
       validator={opts.validator}
       requiredFields={opts.requiredFields}
+      normalizeValue={opts.normalizeValue}
     >
       <AntdForm {...opts.internalFormProps} {...formProps}>
         {typeof children === "function"
@@ -59,34 +60,4 @@ export function useStableForm<TParsedValues>(
   }
 
   return FormRef.current;
-}
-
-/**
- * @deprecated Use useStableForm hook instead for stable component identity.
- * Creates a Form component factory (creates new component on each call).
- */
-export function createForm<TParsedValues>(
-  opts: CreateFormOptions<TParsedValues>,
-): TypedFormComponent<TParsedValues> {
-  const Form: TypedFormComponent<TParsedValues> = (
-    props: FormProps<TParsedValues>,
-  ) => {
-    const { children, ...formProps } = props;
-
-    return (
-      <FormProvider
-        formInstance={opts.form}
-        validator={opts.validator}
-        requiredFields={opts.requiredFields}
-      >
-        <AntdForm {...opts.internalFormProps} {...formProps}>
-          {typeof children === "function"
-            ? children(opts.form.getFieldsValue(true), opts.form)
-            : children}
-        </AntdForm>
-      </FormProvider>
-    );
-  };
-
-  return Form;
 }

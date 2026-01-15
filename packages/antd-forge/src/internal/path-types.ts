@@ -125,3 +125,47 @@ export type NamePathValue<T, P extends readonly (string | number | symbol)[]> =
           NamePathValue<T[K], Extract<Rest, any[]>>
       : never
     : T;
+
+// ============================================================================
+// Normalize Value Types
+// ============================================================================
+
+/**
+ * Parameters passed to the normalizeValue callback.
+ * Includes a `match` method that acts as a type guard to narrow the value type.
+ *
+ * @example
+ * ```tsx
+ * normalizeValue: (params) => {
+ *   if (params.match(["username"])) {
+ *     return params.value.trim(); // value is narrowed to string
+ *   }
+ *   return params.value;
+ * }
+ * ```
+ */
+export type NormalizeValueParams<T> = {
+  /** The field name path being normalized (one of the valid paths in the schema) */
+  name: InnerPathsTuple<T>;
+  /** The current field value (unknown until narrowed via match) */
+  value: unknown;
+  /**
+   * Type guard that narrows the value type based on the field path.
+   * Returns true if the current field matches the given path.
+   *
+   * @param path - The field path to match against
+   * @returns Type predicate that narrows `value` to the type at that path
+   */
+  match<P extends InnerPaths<T>>(
+    path: P,
+  ): this is {
+    name: NormalizeNamePath<P>;
+    value: GetTypeAtPath<T, NormalizeNamePath<P>>;
+    match: NormalizeValueParams<T>["match"];
+  };
+};
+
+/**
+ * Normalize value callback function type.
+ */
+export type NormalizeValueFn<T> = (params: NormalizeValueParams<T>) => unknown;

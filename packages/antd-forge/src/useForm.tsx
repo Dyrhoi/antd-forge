@@ -6,6 +6,7 @@ import { createFormItem, TypedFormItemComponent } from "./FormItem";
 import { createFormList, TypedFormListComponent } from "./FormList";
 import { FieldData } from "./internal/antd-types";
 import { normalizePath } from "./internal/path-segments";
+import { NormalizeValueFn } from "./internal/path-types";
 import { standardValidate } from "./internal/standardSchemaValidator";
 import { useDebounceCallback } from "./internal/useDebounceCallback";
 import { warning } from "./internal/warning";
@@ -157,6 +158,27 @@ export interface UseFormOptions<
    * ```
    */
   autoSubmit?: AutoSubmitOption;
+
+  /**
+   * Global normalize function called for all field values before they are set.
+   * Use the `match` method on params to narrow the value type for specific fields.
+   *
+   * @example
+   * ```tsx
+   * useForm({
+   *   normalizeValue: (params) => {
+   *     if (params.match(["username"])) {
+   *       return params.value.trim(); // value is narrowed to string
+   *     }
+   *     if (params.match(["age"])) {
+   *       return params.value ?? 0; // value is narrowed to number
+   *     }
+   *     return params.value;
+   *   },
+   * });
+   * ```
+   */
+  normalizeValue?: NormalizeValueFn<TFormValues>;
 }
 
 // ============================================================================
@@ -196,7 +218,12 @@ export function useForm<
 ): UseFormReturn<ResolveFormValues<TSchema, TFormValues>> {
   type TResolvedValues = ResolveFormValues<TSchema, TFormValues>;
 
-  const { onFinish: onFinishFromProps, validator, autoSubmit } = opts ?? {};
+  const {
+    onFinish: onFinishFromProps,
+    validator,
+    autoSubmit,
+    normalizeValue,
+  } = opts ?? {};
 
   // Normalize autoSubmit config
   const autoSubmitConfig = normalizeAutoSubmitConfig(autoSubmit);
@@ -264,8 +291,9 @@ export function useForm<
       createFormItem<TResolvedValues>({
         validator,
         requiredFields,
+        normalizeValue,
       }),
-    [validator, requiredFields],
+    [validator, requiredFields, normalizeValue],
   );
 
   const FormList = useMemo(() => createFormList<TResolvedValues>(), []);
@@ -287,6 +315,7 @@ export function useForm<
     form: formAnt,
     validator,
     requiredFields,
+    normalizeValue,
     internalFormProps: formProps,
   });
 
