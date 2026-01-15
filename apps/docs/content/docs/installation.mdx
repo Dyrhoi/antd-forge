@@ -1,7 +1,7 @@
 ---
 title: Installation
 icon: CirclePlay
-description: Get started with antd-forge in your Ant Design project.
+description: Get started with antd-typed in your Ant Design project.
 ---
 
 import { Step, Steps } from "fumadocs-ui/components/steps";
@@ -9,7 +9,7 @@ import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 ## Requirements
 
-antd-forge requires the following peer dependencies:
+antd-typed requires the following peer dependencies:
 
 - **React** 18.0+ or 19.0+
 - **Ant Design** 5.0+ or 6.0+
@@ -17,26 +17,10 @@ antd-forge requires the following peer dependencies:
 ## Install
 
 <Tabs items={["npm", "pnpm", "bun", "yarn"]}>
-  <Tab value="npm">
-    ```bash
-    npm install antd-forge
-    ```
-  </Tab>
-  <Tab value="pnpm">
-    ```bash
-    pnpm add antd-forge
-    ```
-  </Tab>
-  <Tab value="bun">
-    ```bash
-    bun add antd-forge
-    ```
-  </Tab>
-  <Tab value="yarn">
-    ```bash
-    yarn add antd-forge
-    ```
-  </Tab>
+  <Tab value="npm">```bash npm install antd-typed ```</Tab>
+  <Tab value="pnpm">```bash pnpm add antd-typed ```</Tab>
+  <Tab value="bun">```bash bun add antd-typed ```</Tab>
+  <Tab value="yarn">```bash yarn add antd-typed ```</Tab>
 </Tabs>
 
 ## Setup
@@ -49,14 +33,10 @@ antd-forge requires the following peer dependencies:
 Wrap your application with `AntdForgeProvider`. This sets up the internal TanStack Query client used by `useTable`.
 
 ```tsx
-import { AntdForgeProvider } from "antd-forge";
+import { AntdForgeProvider } from "antd-typed";
 
 function App() {
-  return (
-    <AntdForgeProvider>
-      {/* Your app */}
-    </AntdForgeProvider>
-  );
+  return <AntdForgeProvider>{/* Your app */}</AntdForgeProvider>;
 }
 ```
 
@@ -66,6 +46,7 @@ If you're already using TanStack Query, pass your existing `queryClient` to avoi
 ```tsx
 <AntdForgeProvider queryClient={yourQueryClient}>
 ```
+
 </Callout>
 
 </Step>
@@ -76,7 +57,7 @@ If you're already using TanStack Query, pass your existing `queryClient` to avoi
 You're ready to go! Here's a quick example with `useForm`:
 
 ```tsx
-import { useForm } from "antd-forge";
+import { useForm } from "antd-typed";
 import { Form, Input, Button } from "antd";
 import { z } from "zod";
 
@@ -116,26 +97,15 @@ function MyForm() {
 
 ## Schema Validator (Optional)
 
-antd-forge works with any [Standard Schema](https://github.com/standard-schema/standard-schema) compatible validator. Install your preferred library:
+antd-typed works with any [Standard Schema](https://github.com/standard-schema/standard-schema) compatible validator. Install your preferred library:
 
 <Tabs items={["Zod", "Valibot", "ArkType"]}>
-  <Tab value="Zod">
-    ```bash
-    npm install zod
-    ```
-  </Tab>
-  <Tab value="Valibot">
-    ```bash
-    npm install valibot
-    ```
-  </Tab>
-  <Tab value="ArkType">
-    ```bash
-    npm install arktype
-    ```
-  </Tab>
+  <Tab value="Zod">```bash npm install zod ```</Tab>
+  <Tab value="Valibot">```bash npm install valibot ```</Tab>
+  <Tab value="ArkType">```bash npm install arktype ```</Tab>
 </Tabs>
 
 <Callout>
-You can also use `useForm` and `useTable` without a schema validator by providing an explicit type parameter instead.
+  You can also use `useForm` and `useTable` without a schema validator by
+  providing an explicit type parameter instead.
 </Callout>

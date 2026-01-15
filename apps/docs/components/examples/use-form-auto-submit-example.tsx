@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "antd-forge";
+import { useForm } from "antd-typed";
 import { Input, Card, Typography } from "antd";
 import z from "zod";
 import { useState } from "react";

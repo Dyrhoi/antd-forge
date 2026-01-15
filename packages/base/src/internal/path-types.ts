@@ -169,3 +169,28 @@ export type NormalizeValueParams<T> = {
  * Normalize value callback function type.
  */
 export type NormalizeValueFn<T> = (params: NormalizeValueParams<T>) => unknown;
+
+/**
+ * Resolves the type at a given path within a type.
+ * Used for `inheritAt` to narrow form values to a specific nested path.
+ *
+ * @example
+ * type Form = { user: { profile: { name: string } } };
+ * type Profile = GetValueAtPath<Form, ["user", "profile"]>; // { name: string }
+ * type Name = GetValueAtPath<Form, ["user", "profile", "name"]>; // string
+ * type Root = GetValueAtPath<Form, []>; // Form (empty path returns root)
+ */
+export type GetValueAtPath<
+  T,
+  Path extends readonly SimplePathSegment[],
+> = Path extends readonly []
+  ? T
+  : Path extends readonly [infer First, ...infer Rest extends SimplePathSegment[]]
+    ? First extends keyof T
+      ? GetValueAtPath<T[First], Rest>
+      : T extends readonly (infer Item)[]
+        ? First extends number
+          ? GetValueAtPath<Item, Rest>
+          : never
+        : never
+    : never;

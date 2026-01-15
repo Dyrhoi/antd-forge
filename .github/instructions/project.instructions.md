@@ -17,4 +17,4 @@ This file contains instructions that apply to the entire project.
 ## Testing
 
 - Scope tests to the package you touch.
-- Example: `cd packages/antd-forge && bun run test --run` (run mode disables watch so input is readable).
+- Example: `cd packages/antd-typed && bun run test --run` (run mode disables watch so input is readable).

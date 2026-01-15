@@ -1,22 +1,19 @@
-import { StandardSchemaV1 } from "@standard-schema/spec";
 import { Form, FormItemProps } from "antd";
-import { ReactNode } from "react";
+import { NamePath } from "antd/es/form/interface";
+import { ReactNode, useContext } from "react";
+import { FormContext } from "./internal/FormProvider";
 import {
   buildFullPath,
   NamePrefixProvider,
+  useNamePrefix,
 } from "./internal/NamePrefixContext";
 import {
   arePathsEqual,
   createNormalizeParams,
   normalizeNamePath,
 } from "./internal/path-segments";
-import type {
-  InnerPaths,
-  NormalizeValueFn,
-  SimplePathSegment,
-} from "./internal/path-types";
+import type { InnerPaths, NormalizeValueFn } from "./internal/path-types";
 import { createSchemaRule } from "./internal/standardSchemaValidator";
-import { NamePath } from "antd/es/form/interface";
 
 /**
  * Props for the typed FormItem component.
@@ -51,29 +48,12 @@ export type TypedFormItemComponent<TParsedValues> = (
   props: TypedFormItemProps<TParsedValues>,
 ) => ReactNode;
 
-export type CreateFormItemOptions<TParsedValues = unknown> = {
-  validator?: StandardSchemaV1;
-  requiredFields?: Array<StandardSchemaV1.Issue["path"]>;
-  /**
-   * When provided, this prefix is prepended to all names.
-   * Used by useFormInstance({ inherit: true }) for composable sub-components.
-   * When set, the FormItem does NOT set a new prefix context for children.
-   */
-  prefix?: SimplePathSegment[];
-  /**
-   * Global normalize function called for all field values.
-   * When provided, this function is called with the field path and value.
-   */
-  normalizeValue?: NormalizeValueFn<TParsedValues>;
-};
-
 /**
  * Creates a typed FormItem component that wraps Ant Design's Form.Item.
  *
- * This FormItem:
- * - Requires FULL paths from schema root (type-safe)
- * - Sets prefix context for useFormInstance children (inherit mode)
- * - Does NOT read prefix context (use useFormInstance for that)
+ * Reads all configuration from context:
+ * - validator/requiredFields/normalizeValue from FormContext
+ * - prefix from NamePrefixContext
  *
  * @example
  * ```tsx
@@ -99,12 +79,9 @@ export type CreateFormItemOptions<TParsedValues = unknown> = {
  * </FormItem>
  * ```
  */
-export function createFormItem<TParsedValues>(
-  options: CreateFormItemOptions<TParsedValues> = {},
-): TypedFormItemComponent<TParsedValues> {
-  const { validator, requiredFields, prefix, normalizeValue } = options;
-  const isInheritMode = prefix !== undefined;
-
+export function createFormItem<
+  TParsedValues,
+>(): TypedFormItemComponent<TParsedValues> {
   const FormItem: TypedFormItemComponent<TParsedValues> = ({
     rules,
     name,
@@ -112,12 +89,23 @@ export function createFormItem<TParsedValues>(
     normalize,
     ...rest
   }) => {
+    const formContext = useContext(FormContext);
+    const { prefix } = useNamePrefix();
+
+    const validator = formContext?.validator;
+    const requiredFields = formContext?.requiredFields;
+    const normalizeValue = formContext?.normalizeValue as
+      | NormalizeValueFn<TParsedValues>
+      | undefined;
+
+    const hasPrefix = prefix.length > 0;
+
     // Convert name to array path
     const namePath = normalizeNamePath(name);
 
     // Build full path - prepend prefix if in inherit mode
     const fullPath = namePath
-      ? isInheritMode
+      ? hasPrefix
         ? buildFullPath(prefix, namePath)
         : namePath
       : undefined;
@@ -141,9 +129,7 @@ export function createFormItem<TParsedValues>(
     // Check if field is required based on schema
     const required =
       fullPath && requiredFields
-        ? requiredFields.some((path) => {
-            return arePathsEqual(path, fullPath);
-          })
+        ? requiredFields.some((path) => arePathsEqual(path, fullPath))
         : undefined;
 
     const formItem = (
@@ -158,9 +144,9 @@ export function createFormItem<TParsedValues>(
       </Form.Item>
     );
 
-    // In inherit mode, don't set a new prefix context
+    // In inherit mode (has prefix), don't set a new prefix context
     // In normal mode, set this path as prefix for useFormInstance children
-    if (isInheritMode) {
+    if (hasPrefix) {
       return formItem;
     }
 

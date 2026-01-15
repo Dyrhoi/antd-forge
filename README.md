@@ -1,7 +1,7 @@
-# antd-forge
+# antd-typed
 
 > [!CAUTION]
-> antd-forge does not have any version yet as it's not ready for usage yet.
+> antd-typed does not have any version yet as it's not ready for usage yet.
 
 A collection of React hooks that enhance [Ant Design](https://ant.design/) with better TypeScript support and common patterns I found myself rebuilding across projects.
 
@@ -13,7 +13,7 @@ Ant Design is a fantastic UI library, but after using it across multiple project
 - **Repetitive patterns** - Connecting form filters to data queries requires the same boilerplate every time
 - **Schema validation** - Integrating modern schema validators (Zod, Valibot, ArkType) with Ant Design forms isn't straightforward
 
-`antd-forge` aims to fill these gaps with a small set of focused hooks that make Ant Design more type-safe and reduce the boilerplate for common patterns.
+`antd-typed` aims to fill these gaps with a small set of focused hooks that make Ant Design more type-safe and reduce the boilerplate for common patterns.
 
 Somewhat inspired by [refine.dev](https://refine.dev/), but with a slimmer footprint and no framework lock-in. Just hooks you can drop into existing Ant Design projects.
 
@@ -27,21 +27,21 @@ Somewhat inspired by [refine.dev](https://refine.dev/), but with a slimmer footp
 ## Installation
 
 ```bash
-npm install antd-forge
+npm install antd-typed
 # or
-pnpm add antd-forge
+pnpm add antd-typed
 # or
-bun add antd-forge
+bun add antd-typed
 ```
 
 ## Documentation
 
-[View full documentation](https://antd-forge-docs.vercel.app/docs) (coming soon)
+[View full documentation](https://antd-typed-docs.vercel.app/docs) (coming soon)
 
 ## Quick Example
 
 ```tsx
-import { useForm } from "antd-forge";
+import { useForm } from "antd-typed";
 import { z } from "zod";
 import { Form, Input, Button } from "antd";
 

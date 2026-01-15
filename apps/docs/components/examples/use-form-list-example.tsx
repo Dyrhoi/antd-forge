@@ -1,7 +1,7 @@
 "use client";
 
 import { MinusCircleOutlined, PlusCircleOutlined } from "@ant-design/icons";
-import { useForm } from "antd-forge";
+import { useForm } from "antd-typed";
 import { Button, Checkbox, Flex, Form, Input } from "antd";
 import z from "zod";
 

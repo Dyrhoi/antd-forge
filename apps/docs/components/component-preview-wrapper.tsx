@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { AntdForgeProvider } from "antd-forge";
+import { AntdForgeProvider } from "antd-typed";
 
 const queryClient = new QueryClient();
 

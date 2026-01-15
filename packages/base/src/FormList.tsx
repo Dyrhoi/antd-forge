@@ -1,12 +1,9 @@
 import { Form, FormListFieldData, FormListOperation } from "antd";
 import { ReactNode, useState, useEffect } from "react";
 import { FormListProps } from "./internal/antd-types";
+import { useNamePrefix } from "./internal/NamePrefixContext";
 import { normalizeNamePath } from "./internal/path-segments";
-import {
-  GetArrayItemType,
-  InnerPaths,
-  SimplePathSegment,
-} from "./internal/path-types";
+import { GetArrayItemType, InnerPaths } from "./internal/path-types";
 
 /**
  * Field data for each item in the FormList.
@@ -44,16 +41,10 @@ export type TypedFormListComponent<TParsedValues> = <
   props: TypedFormListProps<TParsedValues, TName>,
 ) => ReactNode;
 
-type CreateFormListOptions = {
-  /**
-   * When provided, this prefix is prepended to the FormList name.
-   * Used by useFormInstance({ inherit: true }) for composable sub-components.
-   */
-  prefix?: SimplePathSegment[];
-};
-
 /**
  * Creates a typed FormList component that wraps antd's Form.List.
+ *
+ * Reads prefix from NamePrefixContext.
  *
  * This uses a "shadow" Form.List pattern:
  * - Form.List is rendered to get the operations (add, remove, move) and field tracking
@@ -79,22 +70,23 @@ type CreateFormListOptions = {
  * </FormList>
  * ```
  */
-export function createFormList<TParsedValues>(
-  options: CreateFormListOptions = {},
-): TypedFormListComponent<TParsedValues> {
-  const { prefix } = options;
-
+export function createFormList<
+  TParsedValues,
+>(): TypedFormListComponent<TParsedValues> {
   const TypedFormList: TypedFormListComponent<TParsedValues> = ({
     name,
     children,
     initialValue,
     ...rest
   }) => {
+    const { prefix } = useNamePrefix();
+
     // Convert name to array path
     const rawNamePath = normalizeNamePath(name);
 
-    // Prepend prefix if in inherit mode
-    const namePath = prefix ? [...prefix, ...rawNamePath] : rawNamePath;
+    // Prepend prefix if available
+    const namePath =
+      prefix.length > 0 ? [...prefix, ...rawNamePath] : rawNamePath;
 
     // State to capture Form.List's fields, operation, and meta
     const [listState, setListState] = useState<{

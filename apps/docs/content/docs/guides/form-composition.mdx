@@ -113,7 +113,7 @@ export function CompanyForm() {
 
 ```tsx tab="AddressSubForm.tsx"
 import type { Address } from "./schemas";
-import { useFormInstance } from "antd-forge";
+import { useFormInstance } from "antd-typed";
 
 export function AddressSubForm() {
   const { FormItem } = useFormInstance<Address>({ inherit: true });

@@ -29,7 +29,7 @@ import React from "react";
 
 import { Form, Input, Button } from "antd";
 import { z } from "zod"; // Or Valibot, ArkType, etc.
-import { useForm } from "antd-forge";
+import { useForm } from "antd-typed";
 
 const schema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -148,7 +148,7 @@ The `normalizeValue` option lets you transform field values across the entire fo
 {/* prettier-ignore */}
 ```tsx twoslash
 import { z } from "zod";
-import { useForm, defaultEmptyValuesToUndefined } from "antd-forge";
+import { useForm, defaultEmptyValuesToUndefined } from "antd-typed";
 
 const schema = z.object({
   username: z.string(),
@@ -177,7 +177,7 @@ The `normalizeValue` callback receives a `params` object with:
 {/* prettier-ignore */}
 ```tsx twoslash
 import { z } from "zod";
-import { useForm } from "antd-forge";
+import { useForm } from "antd-typed";
 
 const schema = z.object({
   username: z.string(),
@@ -240,7 +240,7 @@ Recursively converts "empty" values to `undefined`. Handles:
 The underlying utility used by `defaultEmptyValuesToUndefined`. Use it directly when you need to clean values outside the normalize callback:
 
 ```tsx
-import { cleanEmptyValues } from "antd-forge";
+import { cleanEmptyValues } from "antd-typed";
 
 const cleaned = cleanEmptyValues({ a: "x", b: "", c: null });
 // Result: { a: "x" }

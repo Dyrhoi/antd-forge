@@ -5,7 +5,8 @@ description: Antd Design Forge is an opinionated collection of components and ho
 ---
 
 <Callout title="Early Development" type="warn">
-antd-forge is still in early development and does not have a stable release yet. The API may change.
+  antd-typed is still in early development and does not have a stable release
+  yet. The API may change.
 </Callout>
 
 ## Why?
@@ -14,7 +15,7 @@ In my experience, Ant Design, although being a generally well made library, has 
 
 [refine.dev](https://refine.dev/) solves this in their own ways but locks you into their data flow and framework.
 
-**antd-forge** takes a different approach: no framework or library lock-ins. You can enhance your experience using industry standard libraries like TanStack Query and your choice of schema validation, but everything is built with just Ant Design and React as a base.
+**antd-typed** takes a different approach: no framework or library lock-ins. You can enhance your experience using industry standard libraries like TanStack Query and your choice of schema validation, but everything is built with just Ant Design and React as a base.
 
 <Cards>
   <Card
@@ -37,10 +38,10 @@ In my experience, Ant Design, although being a generally well made library, has 
 
 ## Standard Schema Support
 
-antd-forge supports [Standard Schema](https://github.com/standard-schema/standard-schema) specification, which means you can use any compatible validation library:
+antd-typed supports [Standard Schema](https://github.com/standard-schema/standard-schema) specification, which means you can use any compatible validation library:
 
 - **[Zod](https://zod.dev)** - TypeScript-first schema validation
 - **[Valibot](https://valibot.dev)** - Lightweight schema library
 - **[ArkType](https://arktype.io)** - TypeScript's 1:1 validator
 
-Simply pass your schema to the `validator` option and antd-forge handles the rest: validation on submit, error mapping to fields, and automatic required field detection.
+Simply pass your schema to the `validator` option and antd-typed handles the rest: validation on submit, error mapping to fields, and automatic required field detection.

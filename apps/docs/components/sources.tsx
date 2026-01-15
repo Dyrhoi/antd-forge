@@ -26,7 +26,7 @@ const sourceIconMap = [
     name: "Ant Design Forge",
     icon: <AntdForge width={16} height={16} />,
     match: (url: string) =>
-      url.includes("antd-forge.dyrhoi.com") || url.startsWith("/"),
+      url.includes("antd-typed.dyrhoi.com") || url.startsWith("/"),
   },
 ];
 
