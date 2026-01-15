@@ -43,7 +43,7 @@ export function arePathsEqual(
 }
 
 // ============================================================================
-// Normalize Value Helpers
+// Normalize Params Factory
 // ============================================================================
 
 /**
@@ -65,24 +65,4 @@ export function createNormalizeParams<T>(
       return arePathsEqual(name, normalizedPath);
     },
   } as NormalizeValueParams<T>;
-}
-
-/**
- * Default normalize function that converts empty strings to undefined.
- * Can be used with `normalizeValue` for common form behavior.
- *
- * @example
- * ```tsx
- * useForm({
- *   normalizeValue: defaultEmptyValuesToUndefined,
- * })
- * ```
- */
-export function defaultEmptyValuesToUndefined<T>(
-  params: NormalizeValueParams<T>,
-): unknown {
-  if (params.value === "") {
-    return undefined;
-  }
-  return params.value;
 }

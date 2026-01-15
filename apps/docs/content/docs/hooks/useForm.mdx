@@ -135,6 +135,117 @@ return (
 );
 ```
 
+## Normalize Values
+
+The `normalizeValue` option lets you transform field values across the entire form before they're stored. This is useful for:
+
+- Converting empty strings to `undefined` for cleaner form data
+- Trimming whitespace from string inputs
+- Transforming specific field values based on their path
+
+### Basic Usage
+
+{/* prettier-ignore */}
+```tsx twoslash
+import { z } from "zod";
+import { useForm, defaultEmptyValuesToUndefined } from "antd-forge";
+
+const schema = z.object({
+  username: z.string(),
+  age: z.number(),
+});
+
+const { formProps, FormItem } = useForm({
+  validator: schema,
+  normalizeValue: defaultEmptyValuesToUndefined,
+  onFinish: (values) => {
+    // Empty strings, null, NaN, empty arrays/objects are now undefined
+  },
+});
+```
+
+{/* prettier-ignore-end */}
+
+### Custom Normalization
+
+The `normalizeValue` callback receives a `params` object with:
+
+- `name` - The field path being normalized
+- `value` - The current field value
+- `match(path)` - A type guard to narrow the value type for a specific path
+
+{/* prettier-ignore */}
+```tsx twoslash
+import { z } from "zod";
+import { useForm } from "antd-forge";
+
+const schema = z.object({
+  username: z.string(),
+  tags: z.array(z.string()),
+  age: z.number(),
+});
+
+const { formProps, FormItem } = useForm({
+  validator: schema,
+  normalizeValue: (params) => {
+    // Use match() to get type-safe access to specific fields
+    if (params.match(["username"])) {
+      return params.value.trim();
+      //           ^?
+    }
+    if (params.match(["tags"])) {
+      return params.value.filter(Boolean);
+      //           ^?
+    }
+    return params.value;
+  },
+});
+```
+
+{/* prettier-ignore-end */}
+
+### Per-Field Override
+
+The `normalize` prop on individual `FormItem` components takes precedence over the global `normalizeValue`:
+
+```tsx
+<FormItem
+  name={["price"]}
+  normalize={(value) => (value ? Number(value) : undefined)}
+>
+  <Input />
+</FormItem>
+```
+
+### Built-in Helpers
+
+#### `defaultEmptyValuesToUndefined`
+
+Recursively converts "empty" values to `undefined`. Handles:
+
+| Input                       | Output         |
+| --------------------------- | -------------- |
+| `""`                        | `undefined`    |
+| `null`                      | `undefined`    |
+| `NaN`                       | `undefined`    |
+| `[]`                        | `undefined`    |
+| `[null, undefined, ""]`     | `undefined`    |
+| `{ a: null, b: "" }`        | `undefined`    |
+| `["a", "", "b"]`            | `["a", "b"]`   |
+| `{ a: "x", b: null }`       | `{ a: "x" }`   |
+| `{ a: ["", "x"], b: null }` | `{ a: ["x"] }` |
+
+#### `cleanEmptyValues`
+
+The underlying utility used by `defaultEmptyValuesToUndefined`. Use it directly when you need to clean values outside the normalize callback:
+
+```tsx
+import { cleanEmptyValues } from "antd-forge";
+
+const cleaned = cleanEmptyValues({ a: "x", b: "", c: null });
+// Result: { a: "x" }
+```
+
 ## Examples
 
 ### Basic Form

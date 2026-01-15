@@ -6,10 +6,8 @@ export function baseOptions(): BaseLayoutProps {
     nav: {
       title: (
         <div className="flex items-center gap-2">
-          <AntdForge className="w-5" />
-          <span>
-            Ant Design <span className="font-bold">Forge</span>
-          </span>
+          <AntdForge className="w-6.5 h-6.5" />
+          <span>antd-typed</span>
         </div>
       ),
     },

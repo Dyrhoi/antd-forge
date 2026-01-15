@@ -1,74 +1,132 @@
 ---
 title: Form Composition
 icon: Layers
-description: Compose reusable form sections with typed FormItem, FormList, useForm, and useFormInstance.
+description: Compose reusable form sections useFormInstance.
+sources:
+  useForm: /docs/hooks/useForm
+  useFormInstance: /docs/hooks/useFormInstance
 ---
 
-This guide shows how antd-forge approaches form composition: reuse small form sections, keep every field typed, and let nested forms stay synchronized with their parent forms.
+So far we've seen how to utilize `useForm` to create type-safe forms with creator methods like `FormItem`.
+This will get you far when building simple, single-use, one component forms.
 
-## Building Blocks
+However, in real world applications forms sometimes get quite complex.
+Sometimes sections of forms needs to be reusable across different forms, or even within the same form. In these cases, composing forms from smaller parts is a great way to keep your code maintainable and DRY.
 
-- **useForm**: creates the typed form context, including `FormItem`, `FormList`, and `formProps` for Ant Design's `<Form>`.
-- **FormItem**: typed `Form.Item` that requires valid field paths from the schema and sets up a prefix context for nested components.
-- **FormList**: typed `Form.List` for dynamic arrays, with full type inference for nested paths.
-- **useFormInstance**: grabs the same typed helpers inside deeply nested components. With `inherit: true`, field names become relative to the nearest `FormItem` prefix—perfect for reusable sections.
+## Breaking up forms into smaller components
 
-## Live example
+### Dynamic inheritance
 
-See two forms sharing the same address section: `useForm` for the user profile and `FormList` for multiple company offices, both powered by `useFormInstance` inheritance.
+Say we have two entities, `Person` and `Company`. This could be represented with the following Zod schemas:
 
-<ExamplePreview
-  src="examples/form-composition-example.tsx"
-  files={[
-    {
-      path: "examples/form-composition-shared.tsx",
-      name: "address-shared.tsx",
-    },
-  ]}
-/>
-
-## Shared Address Shape
-
-```tsx
+```ts
 import { z } from "zod";
 
 const addressSchema = z.object({
-  line1: z.string().min(1, "Street is required"),
-  line2: z.string().optional(),
+  street: z.string().min(1, "Street is required"),
   city: z.string().min(1, "City is required"),
-  state: z.string().length(2, "Use 2-letter state code"),
-  postalCode: z.string().min(4, "Postal code is too short"),
+  zipCode: z.string().min(1, "Zip code is required"),
 });
 
-type Address = z.infer<typeof addressSchema>;
+const personSchema = z.object({
+  // ommited for brevity
+  address: addressSchema,
+});
+
+const companySchema = z.object({
+  // ommited for brevity
+  address: addressSchema,
+});
 ```
 
-## Reusable Address Section (inherit mode)
+We notice that both `Person` and `Company` has an `address` field with the same structure, and in this example, it's actually using the same database table behind the scenes.
+To avoid duplicating the address fields in both forms, we can create a reusable `AddressSubForm` component that can be used in both the `PersonForm` and `CompanyForm`.
 
-`useFormInstance` with `inherit: true` reads the prefix from its nearest parent `FormItem`, so the nested fields can stay relative and still be type-checked.
+```tsx tab="PersonForm.tsx"
+import { personSchema } from "./schemas";
 
-```tsx
-import { Input } from "antd";
+export function PersonForm() {
+  const { formProps, FormItem } = useForm({
+    validator: personSchema,
+    onFinish: (values) => {
+      // Handle form submission
+    },
+  });
+
+  return (
+    <Form layout="vertical">
+      <FormItem name={["firstName"]} label="First Name">
+        <Input />
+      </FormItem>
+      <FormItem name={["lastName"]} label="Last Name">
+        <Input />
+      </FormItem>
+      <FormItem name={["ssn"]} label="SSN">
+        <Input />
+      </FormItem>
+
+      {/* Reusable Address Sub-Form */}
+      <FormItem name={["address"]} label="Address">
+        <AddressSubForm />
+      </FormItem>
+
+      <Button type="primary" htmlType="submit">
+        Submit
+      </Button>
+    </Form>
+  );
+}
+```
+
+```tsx tab="CompanyForm.tsx"
+import { companySchema } from "./schemas";
+
+export function CompanyForm() {
+  const { formProps, FormItem } = useForm({
+    validator: companySchema,
+    onFinish: (values) => {
+      // Handle form submission
+    },
+  });
+
+  return (
+    <Form layout="vertical">
+      <FormItem name={["companyName"]} label="Company Name">
+        <Input />
+      </FormItem>
+      <FormItem name={["companyNo"]} label="Registration Number">
+        <Input />
+      </FormItem>
+
+      {/* Reusable Address Sub-Form */}
+      <FormItem name={["address"]} label="Address">
+        <AddressSubForm />
+      </FormItem>
+
+      <Button type="primary" htmlType="submit">
+        Submit
+      </Button>
+    </Form>
+  );
+}
+```
+
+```tsx tab="AddressSubForm.tsx"
+import type { Address } from "./schemas";
 import { useFormInstance } from "antd-forge";
 
-function AddressFields() {
+export function AddressSubForm() {
   const { FormItem } = useFormInstance<Address>({ inherit: true });
 
   return (
     <>
-      <FormItem name={["line1"]} label="Street">
-        <Input />
-      </FormItem>
-      <FormItem name={["line2"]} label="Apartment / Suite">
+      <FormItem name={["street"]} label="Street">
         <Input />
       </FormItem>
       <FormItem name={["city"]} label="City">
         <Input />
       </FormItem>
-      <FormItem name={["state"]} label="State">
-        <Input />
-      </FormItem>
-      <FormItem name={["postalCode"]} label="Postal Code">
+      <FormItem name={["zipCode"]} label="Zip Code">
         <Input />
       </FormItem>
     </>
@@ -76,140 +134,38 @@ function AddressFields() {
 }
 ```
 
-If you accidentally use a name that is not part of `Address`, TypeScript flags it immediately.
-
-## User Form Reusing the Section
-
-```tsx
-import { Button, Form, Input } from "antd";
-import { useForm } from "antd-forge";
+```ts tab="schemas.ts"
 import { z } from "zod";
 
-const userSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
+const addressSchema = z.object({
+  street: z.string().min(1, "Street is required"),
+  city: z.string().min(1, "City is required"),
+  zipCode: z.string().min(1, "Zip code is required"),
+});
+export type Address = z.infer<typeof addressSchema>;
+
+const personSchema = z.object({
+  firstName: z
+    .string("First name is required")
+    .min(3, "First name must minimum be 3 characters"),
+  lastName: z
+    .string("Last name is required")
+    .min(3, "Last name must minimum be 3 characters"),
+  ssn: z.string("SSN is required").min(1, "SSN is required"),
   address: addressSchema,
 });
-
-type UserFormValues = z.infer<typeof userSchema>;
-
-function UserForm() {
-  const { formProps, FormItem } = useForm<UserFormValues>({
-    validator: userSchema,
-    onFinish: (values) => console.log("User saved", values.address.city),
-  });
-
-  return (
-    <Form {...formProps} layout="vertical">
-      <FormItem name={["name"]} label="Full Name">
-        <Input />
-      </FormItem>
-      <FormItem name={["email"]} label="Email">
-        <Input />
-      </FormItem>
-
-      <FormItem label="Address" style={{ marginBottom: 0 }}>
-        <FormItem name={["address"]} noStyle>
-          <AddressFields />
-        </FormItem>
-      </FormItem>
-
-      <Button type="primary" htmlType="submit">
-        Save User
-      </Button>
-    </Form>
-  );
-}
-```
-
-- The inner `FormItem` with `name={["address"]}` sets the prefix used by `AddressFields`, while the outer item keeps the label/layout.
-- `AddressFields` stays reusable and fully typed—change the address shape once, and both the schema and field names stay in sync.
-
-## Company Form with Multiple Offices (FormList)
-
-`FormList` keeps array paths typed while still allowing the same `AddressFields` to be reused.
-
-```tsx
-import { Button, Form, Input } from "antd";
-import { useForm } from "antd-forge";
-import { z } from "zod";
+export type Person = z.infer<typeof personSchema>;
 
 const companySchema = z.object({
-  companyName: z.string().min(2),
-  website: z.string().url().optional(),
-  offices: z.array(addressSchema).min(1),
+  companyName: z
+    .string("Company name is required")
+    .min(3, "Company name must minimum be 3 characters"),
+  companyNo: z
+    .string("Registration number is required")
+    .min(1, "Registration number is required"),
+  address: addressSchema,
 });
+export type Company = z.infer<typeof companySchema>;
 
-type CompanyFormValues = z.infer<typeof companySchema>;
-
-function CompanyForm() {
-  const { formProps, FormItem, FormList } = useForm<CompanyFormValues>({
-    validator: companySchema,
-    onFinish: (values) => console.log("Company saved", values.offices.length),
-  });
-
-  return (
-    <Form {...formProps} layout="vertical">
-      <FormItem name={["companyName"]} label="Company Name">
-        <Input />
-      </FormItem>
-      <FormItem name={["website"]} label="Website">
-        <Input />
-      </FormItem>
-
-      <FormList name={["offices"]} initialValue={[{}]}>
-        {/* At least one office */}
-        {(fields, { add, remove }) => (
-          <>
-            {fields.map(({ key, name: index }) => (
-              <div
-                key={key}
-                style={{
-                  border: "1px solid #f0f0f0",
-                  padding: 12,
-                  marginBottom: 12,
-                }}
-              >
-                <FormItem
-                  label={`Office ${index + 1}`}
-                  style={{ marginBottom: 8 }}
-                >
-                  <FormItem name={["offices", index]} noStyle>
-                    <AddressFields />
-                  </FormItem>
-                </FormItem>
-                <Button
-                  danger
-                  onClick={() => remove(index)}
-                  disabled={fields.length === 1}
-                >
-                  Remove office
-                </Button>
-              </div>
-            ))}
-
-            <Button type="dashed" onClick={() => add()}>
-              Add another office
-            </Button>
-          </>
-        )}
-      </FormList>
-
-      <Button type="primary" htmlType="submit" style={{ marginTop: 12 }}>
-        Save Company
-      </Button>
-    </Form>
-  );
-}
+export { personSchema, companySchema, addressSchema };
 ```
-
-- `FormList` enforces that `offices` is an array of `Address` objects.
-- Each office reuses `AddressFields`, and `useFormInstance` still keeps names relative to the current item (`["offices", index]`).
-
-## When to Reach for useFormInstance
-
-- You want a component that renders form fields but should not know the entire parent schema—use `inherit: true` and let the parent `FormItem` set the prefix.
-- You want to read the same `form` instance inside nested components (e.g., to call `form.setFieldsValue` or `useWatch`).
-- You have sections that need to work both standalone and inside `FormList` items.
-
-With these patterns, you can assemble complex forms from small, typed pieces while keeping a single source of truth for validation and field paths.
